@@ -11,10 +11,17 @@
 #define DECK_POSITION_X SCREEN_W - CARD_W - 80
 #define DECK_POSITION_Y 180
 
+#define HAND_TOTAL_SIZE 700
+
+#define HAND_POSITION_X SCREEN_W/2 - HAND_TOTAL_SIZE/2
+#define HAND_POSITION_Y 300
+
+
+
 #define N_VERTICES 6
-#define CARD_W 75
+#define CARD_W 85
 #define CARD_H 98
-#define CARD_SIZE 0.35
+#define CARD_SIZE 0.25
 #define CARD_RATIO CARD_H/CARD_W
 
 typedef struct Vertex_s
@@ -89,10 +96,11 @@ typedef struct s_card{
     Card_States state;
     Card_House house;
     Card_Type type;
-
   
     GLuint ID;    // unique identifier
     int level; // 1 - 12 
+
+    bool selected;
 
 } Card;
 
@@ -212,7 +220,7 @@ GLint LoadDeck(std::vector<GLuint> &deck);
 *        - Lerping their rotation to face upwards
 *
 */
-GLint UpdateHand(std::vector<GLuint> &hand);
+GLint UpdateHand(std::vector<GLuint> &hand, int cursorPosition);
 
 /***
 *
@@ -232,7 +240,7 @@ GLint AddCardToHand(GLuint cardID, std::vector<GLuint> &hand,  std::vector<GLuin
 
 GLint RemoveCardFromDeck(GLuint cardID, Deck &deck);
 
-GLint RemoveCardFromHand(GLuint cardID, Hand &hand);
+GLint RemoveCardsFromHand(std::vector<GLuint> &hand);
 
 void RenderDeck(std::vector<GLuint> &deck);
 

@@ -46,16 +46,24 @@
 #define JOY_DOWN  15
 
 
+// switch pad
+PadState pad;
+
 //SDL/GLES Global Contex
 
 SDL_Event event;
 SDL_Window *window;
 SDL_GLContext GLcontext;  // GLES (OpenGL for Embeded System) context for shaders and whatever  
 
-
 // GLOBAL 
 std::vector<GLuint> globalDeck;
 std::vector<GLuint> globalHand;
+int cursor;
+
+uint8_t maxSelectedCards = 5;
+uint8_t selectedCardsCount = 0;
+
+uint8_t handSize = 8;
 
 int APP::ConfigureApplication()
 {
@@ -110,6 +118,11 @@ int APP::ConfigureApplication()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    // configuración del pad 1
+    padConfigureInput(1, HidNpadStyleSet_NpadStandard);
+    padInitializeDefault(&pad);
+
+
     TRACE("APP INICIALIZATED");
   return 0;
 }
@@ -126,10 +139,14 @@ int APP::SetupScene()
 
     LoadDeck(globalDeck);
 
-    AddCardToHand(1, globalHand, globalDeck);
-    AddCardToHand(2, globalHand, globalDeck);
-    AddCardToHand(3, globalHand, globalDeck);
-    AddCardToHand(5, globalHand, globalDeck);
+    for (int i = 1; i <= handSize; i++ )
+    {
+        AddCardToHand(i, globalHand, globalDeck);
+    }
+
+    // Posiciona el cursor en medio de la baraja y selecciona la carta
+    cursor = globalHand.size()/2;
+
 
     TRACE("SCENE SETTED");
 
@@ -142,6 +159,7 @@ float endAngle = 180.0f;
 uint32_t tick = SDL_GetTicks();
 uint32_t last_tick = SDL_GetTicks();;
 float delta_time;
+
 void APP::Update()
 {
     
@@ -150,7 +168,74 @@ void APP::Update()
     delta_time = (tick - last_tick) / 1000.0f; 
     last_tick = tick;
     
-    UpdateHand(globalHand);
+
+    padUpdate(&pad);
+    u64 botonesPulsados = padGetButtonsDown(&pad);
+
+    
+    // Mover el cursor a la Izquierda
+    if (botonesPulsados & HidNpadButton_Left) {
+        if (cursor > 0) {
+            cursor--; // Nos movemos una carta a la izquierda
+        }
+    }
+
+    // Mover el cursor a la Derecha
+    if (botonesPulsados & HidNpadButton_Right) {
+        // Asegurarnos de no salirnos de la mano
+        if ((size_t) cursor < globalHand.size() - 1) { 
+            cursor++; 
+        }
+    }
+
+    
+    // Seleccionar/Deseleccionar con la 'A'
+    if (botonesPulsados & HidNpadButton_A) {
+        // añadimos o substraemos la carta seleccionada al contador dependiendo si es true o false el valor selected
+        uint8_t result;
+        Card &cardRef = RetrieveCardReference(globalHand[cursor], result);
+
+        if( (selectedCardsCount >= 0 && cardRef.selected) || (selectedCardsCount < maxSelectedCards && !cardRef.selected) )
+        {
+
+            if(!cardRef.selected) 
+            {
+                TRACE("Selecting Card with ID %d", cardRef.ID);
+
+                selectedCardsCount++;
+            }else{
+                TRACE("Unselecting Card with ID %d", cardRef.ID);
+
+                selectedCardsCount--;
+            }
+            cardRef.selected = !cardRef.selected;
+        
+        }
+    }
+
+    // borra las cartas seleccionadas
+    if (botonesPulsados & HidNpadButton_X)
+    {
+        if(selectedCardsCount != 0)
+        {
+            RemoveCardsFromHand(globalHand);
+            selectedCardsCount = 0;
+        }
+        
+       // si el tamaño de la baraja es menor que el tamaño real de la baraja
+        if(globalDeck.size() > 0 && globalHand.size() < handSize)
+        {
+            while(globalHand.size() < handSize )
+            {
+                TRACE("MOVING CARD FROM HAND TO DECK. DECK SIZE: %ld", globalDeck.size());
+                if(globalDeck.size() == 0) {break;}
+                AddCardToHand(globalDeck[globalDeck.size()-1], globalHand, globalDeck);
+            }
+        }
+
+    }
+
+    UpdateHand(globalHand, cursor);
 
     updateLogs();
 }
@@ -164,8 +249,8 @@ void APP::Render()
     RenderDeck(globalDeck);
 
     SDL_GL_SwapWindow(window);
-    TRACE("END OF RENDER at time %d", SDL_GetTicks());
-    TRACE("ms: %f", delta_time);
+    //TRACE("END OF RENDER at time %d", SDL_GetTicks());
+    //TRACE("ms: %f", delta_time);
 }
 
 

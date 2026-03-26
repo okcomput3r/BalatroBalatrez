@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <algorithm>
 #include <vector>
 
 static std::vector<Card> s_cardReferences;
@@ -130,6 +131,8 @@ GLuint CreateBaseCard(Card_House house, int level)
         s_cardReferences[ID-1].angle = 0.0f;
 
         s_cardReferences[ID-1].type = BASIC;
+        s_cardReferences[ID-1].selected = false;
+
         s_unusedCardIDs.pop_back();
         TRACE("card RECICLED with ID: %d, Level: %d", ID, level);
     }
@@ -148,8 +151,9 @@ GLuint CreateBaseCard(Card_House house, int level)
         newCard.scale[2] = 1.0f;
 
         newCard.angle = 0.0f;
- 
+        
         newCard.type = BASIC;
+        newCard.selected = false;
         s_cardReferences.push_back(newCard);
         TRACE("newCard created with ID: %d, Level: %d", s_cardReferences[s_cardReferences.size()-1].ID, s_cardReferences[s_cardReferences.size()-1].level);
     }
@@ -263,7 +267,7 @@ void DrawCard(GLuint CardID)
 
     // TEXTURE SAMPLING
 
-    glm::vec2 uv = glm::vec2(68.0f * (float) (cardToRender.level - 1) / 817.0f, 98.0f * (float) (cardToRender.house) / 389.0f);
+    glm::vec2 uv = glm::vec2(68.0f * (float) (cardToRender.level - 1) / 817.0f, 97.0f * (float) (cardToRender.house) / 389.0f);
     glm::vec2 scale = glm::vec2(68.0f/817.0f, 98.0f/389.0f);
     float visible = 1.0f;
 
@@ -320,47 +324,78 @@ GLint LoadDeck(std::vector<GLuint> &deck)
 
 void RenderDeck(std::vector<GLuint> &deck)
 {
+    if(deck.size() == 0) {return;}
     for (size_t i = 0; i <= deck.size()-1; i++)
     {
         float position[3] = {(DECK_POSITION_X) + (float) i/2, (DECK_POSITION_Y)  + (float) i/2, 0.0f};
         UpdateCardPosition(deck[i], position);
 
-        TRACE ("Rendering Card with id %d", deck[i]);
+        //TRACE ("Rendering Card with id %d", deck[i]);
         DrawCard(deck[i]);
     }
 }
 
-GLint UpdateHand(std::vector<GLuint> &hand)
+GLint UpdateHand(std::vector<GLuint> &hand, int cursorPosition)
 {
+    if (hand.size() == 0) {return 0;}
     for (size_t i = 0; i <= hand.size()-1; i++)
     {
         uint8_t result;
         Card &cardRef = RetrieveCardReference(hand[i], result);
         if (!result) { TRACE ("Couldn't retrieve Card with ID: %d", hand[i]);}
 
-
+        // actualiza la posición para que esté boca arriba
         float lerpAngle;
         float destAngle = 180.0f;
         lerpf(cardRef.angle, destAngle, lerpAngle, 0.05f);
+
+        // actualiza la posición y comprueba si está seleccionada
         float lerpPosition[3] = {0.0f,0.0f,0.0f};
-        float destPosition[3] = {100.0f + (i * (CARD_W + 50.0f)), 250.0f,0.0f};
-        lerp(cardRef.position, destPosition, lerpPosition, 0.05f);
+        float destPosition[3];
+
+
+        
+        // si la carta está seleccionada, actualizar su posición 50 pixeles por encima de las demás
+        if(!cardRef.selected)
+        {
+            destPosition[0] = (float) HAND_POSITION_X + (i * (CARD_W + (float) HAND_TOTAL_SIZE) / hand.size());
+            destPosition[1] = (float) HAND_POSITION_Y;
+            destPosition[2] = 0.0f;
+        }
+        else
+        {
+            destPosition[0] = (float) HAND_POSITION_X + (i * (CARD_W + (float) HAND_TOTAL_SIZE) / hand.size());
+            destPosition[1] = (float) HAND_POSITION_Y + 50.0f;
+            destPosition[2] = 0.0f;
+        }
+
+
+        // si la posición de la carta en la mano es igual a la posición del cursor
+        // se aumenta la posicion y de la carta 30px
+        if( i  == (size_t) cursorPosition)
+        {
+            destPosition[1] += 30.0f;
+        }
+
+        lerp(cardRef.position, destPosition, lerpPosition, 0.3f);
 
         cardRef.angle += lerpAngle;
         cardRef.position[0] = lerpPosition[0];
         cardRef.position[1] = lerpPosition[1];
         cardRef.position[2] = lerpPosition[2]; 
 
-        TRACE ("Card With ID %d updated in hand. New pos: x-> %f y-> %f z-> %f", cardRef.ID, cardRef.position[0], cardRef.position[1], cardRef.position[2]);
+        //TRACE ("Card With ID %d updated in hand. New pos: x-> %f y-> %f z-> %f", cardRef.ID, cardRef.position[0], cardRef.position[1], cardRef.position[2]);
     } 
     return 0;
 }
 
 void RenderHand(std::vector<GLuint> &hand)
 {
+
+    if(hand.size() == 0) {return;}
     for (size_t i = 0; i <= hand.size()-1; i++)
     {
-        TRACE ("Rendering Card with id %d", hand[i]);
+        //TRACE ("Rendering Card with id %d", hand[i]);
         DrawCard(hand[i]);
     }
 }
@@ -385,3 +420,38 @@ GLint AddCardToHand(GLuint cardID, std::vector<GLuint> &hand,  std::vector<GLuin
 
     return 0;
 }
+
+GLint RemoveCardsFromHand(std::vector<GLuint> &hand)
+{
+    std::vector<GLuint> cardsToErase;
+    // se recorre la mano de derecha a izquierda
+    for(size_t i = 0 ; i <= hand.size() - 1; i++)
+    {
+
+        uint8_t result;
+        Card &cardRef = RetrieveCardReference(hand[i], result);
+        if (result == -1) {TRACE("Couldn't reference card with id %d", hand[i]); return -1;}
+        
+        TRACE("CARD FOUND ID %d", cardRef.ID);
+        if(cardRef.selected)
+        {
+            cardsToErase.push_back(hand[i]);
+        }
+
+
+    }
+
+    for (size_t i = 0; i <= cardsToErase.size() -1; i++)
+    {
+        TRACE("ERASING CARD WITH ID %d", cardsToErase[i]);
+        hand.erase(find(hand.begin(),hand.end(),cardsToErase[i]));
+
+    }
+
+
+    TRACE("CARDS REMOVED");
+
+
+    return 0;
+}
+
