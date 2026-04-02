@@ -31,7 +31,7 @@
 #include <Graphics/cards.h>
 #include <Utils/logs.h>
 #include <Utils/math.h>
-
+#include <Utils/audio.h>
 
 // some switch buttons
 #define JOY_A     0
@@ -75,22 +75,23 @@ int APP::ConfigureApplication()
 
     if (innitLogs() == -1) { return -1; }
 
-    if(SDL_Init(SDL_INIT_VIDEO) < 0 )
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_JOYSTICK | SDL_INIT_AUDIO) < 0 )
     {
         TRACE("SDL_Init: %s\n", SDL_GetError());
         return -1;
     }
 
-    // Configs context
+    // Initialize audio module
+    Audio::Init();
 
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES); // Set the profile of OpenGl to Embeded Systems
+    // Configs context
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES); 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    SDL_SetHint(SDL_HINT_OPENGL_ES_DRIVER, "1"); // Forces ES drivers
+    SDL_SetHint(SDL_HINT_OPENGL_ES_DRIVER, "1"); 
 
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     
-
     window = SDL_CreateWindow("Prueba de cartas", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_W, SCREEN_H, SDL_WINDOW_SHOWN);
     if (!window) {
         TRACE("SDL_CreateWindow: %s\n", SDL_GetError());
@@ -124,7 +125,7 @@ int APP::ConfigureApplication()
 
 
     TRACE("APP INICIALIZATED");
-  return 0;
+    return 0;
 }
 GLuint cardHandle;
 
@@ -147,8 +148,11 @@ int APP::SetupScene()
     // Posiciona el cursor en medio de la baraja y selecciona la carta
     cursor = globalHand.size()/2;
 
+    // Load and play background music only when the scene is setted up correctly
+    Audio::PlayBGM("romfs:/data/audio/Balatro_Theme.mp3", 60);
+    Audio::SetVolume(60); // Volume already set in PlayBGM, but can be adjusted later with this function
 
-    TRACE("SCENE SETTED");
+    TRACE("SCENE SETTED AND MUSIC STARTED");
 
     return 0;
 }
@@ -259,6 +263,7 @@ void APP::CleanApplication()
     //destroyShaderProgram(cardBaseShader);
     //texDestroy(textureFront);
     //texDestroy(textureBack);
+    Audio::Clean(); 
     terminateLogs();
     SDL_Quit();
 }
