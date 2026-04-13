@@ -60,6 +60,9 @@ std::vector<GLuint> globalDeck;
 std::vector<GLuint> globalHand;
 int cursor;
 
+Mix_Chunk* s_sfxCardSelect = nullptr;
+Mix_Chunk* s_sfxCardUnselect = nullptr;
+
 uint8_t maxSelectedCards = 5;
 uint8_t selectedCardsCount = 0;
 
@@ -148,6 +151,10 @@ int APP::SetupScene()
     // Posiciona el cursor en medio de la baraja y selecciona la carta
     cursor = globalHand.size()/2;
 
+    // Load SFX into memory
+    s_sfxCardSelect = Audio::LoadSFX("romfs:/data/audio/card_select.wav");
+    s_sfxCardUnselect = Audio::LoadSFX("romfs:/data/audio/card_unselect.wav");
+
     // Load and play background music only when the scene is setted up correctly
     Audio::PlayBGM("romfs:/data/audio/Balatro_Theme.mp3", 60);
     Audio::SetVolume(60); // Volume already set in PlayBGM, but can be adjusted later with this function
@@ -207,10 +214,14 @@ void APP::Update()
                 TRACE("Selecting Card with ID %d", cardRef.ID);
 
                 selectedCardsCount++;
+
+                Audio::PlaySFX(s_sfxCardSelect, 60);
             }else{
                 TRACE("Unselecting Card with ID %d", cardRef.ID);
 
                 selectedCardsCount--;
+
+                Audio::PlaySFX(s_sfxCardUnselect, 60);
             }
             cardRef.selected = !cardRef.selected;
         
@@ -263,6 +274,8 @@ void APP::CleanApplication()
     //destroyShaderProgram(cardBaseShader);
     //texDestroy(textureFront);
     //texDestroy(textureBack);
+    Audio::FreeSFX(s_sfxCardSelect);
+    Audio::FreeSFX(s_sfxCardUnselect);
     Audio::Clean(); 
     terminateLogs();
     SDL_Quit();

@@ -1,4 +1,5 @@
 #pragma once
+#include <SDL_mixer.h>
 
 namespace Audio {
     // Initialize SDL_mixer and open the audio device
@@ -15,4 +16,14 @@ namespace Audio {
 
     // Adjust the music volume (0-128)
     void SetVolume(int volume);
+
+    // Loads a sound effect into memory and returns the pointer
+    Mix_Chunk* LoadSFX(const char* filePath);
+
+    // Reproduce the sound effect on the first available channel with the specified volume
+    void PlaySFX(Mix_Chunk* chunk, int volume = 60);
+
+    // Frees the memory allocated for the sound effect when exiting the game
+    void FreeSFX(Mix_Chunk* chunk);
+
 }   

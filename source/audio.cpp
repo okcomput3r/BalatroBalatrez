@@ -79,4 +79,33 @@ namespace Audio {
         Mix_VolumeMusic(volume);
         TRACE("Music volume adjusted to %d", volume);
     }
+
+    // Loads a sound effect into memory and returns the pointer
+    Mix_Chunk* LoadSFX(const char* filePath) {
+        if (!isInitialized) return nullptr;
+        
+        Mix_Chunk* chunk = Mix_LoadWAV(filePath);
+        if (chunk == nullptr) {
+            TRACE("Error loading SFX %s: %s", filePath, Mix_GetError());
+        } else {
+            TRACE("SFX loaded correctly: %s", filePath);
+        }
+        return chunk;
+    }
+
+    // Reproduce the sound effect on the first available channel with the specified volume
+    void PlaySFX(Mix_Chunk* chunk, int volume) {
+        if (!isInitialized || chunk == nullptr) return;
+        
+        Mix_VolumeChunk(chunk, volume);
+        // -1 means SDL_mixer will automatically find the first available channel that is not currently playing
+        Mix_PlayChannel(-1, chunk, 0); 
+    }
+
+    // Frees the memory allocated for the sound effect when exiting the game
+    void FreeSFX(Mix_Chunk* chunk) {
+        if (chunk != nullptr) {
+            Mix_FreeChunk(chunk);
+        }
+    }
 }
