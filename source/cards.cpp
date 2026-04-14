@@ -20,6 +20,8 @@
 #include <unistd.h>
 #include <algorithm>
 #include <vector>
+#include <random>
+#include <ctime> //Necesario para randomizar la baraja con una seed distinta
 
 static std::vector<Card> s_cardReferences;
 static std::vector<GLuint> s_unusedCardIDs;
@@ -40,6 +42,7 @@ static GLint s_atlasSamplerLoc = -1;
 static GLint s_visibleLoc = -1;
 
 static glm::mat4 s_transformMatrix;
+
 
 
 GLint LoadBaseCardBuffers()
@@ -318,6 +321,14 @@ GLint LoadDeck(std::vector<GLuint> &deck)
             deck.push_back(Carta);
         }
     }
+
+    unsigned int semilla = static_cast<unsigned int>(std::time(nullptr));
+    std::mt19937 g(semilla); 
+    
+    // Desordenamos el vector de cartas
+    std::shuffle(deck.begin(), deck.end(), g);
+    
+
     return 0;
 }
 
@@ -338,6 +349,7 @@ void RenderDeck(std::vector<GLuint> &deck)
 GLint UpdateHand(std::vector<GLuint> &hand, int cursorPosition)
 {
     if (hand.size() == 0) {return 0;}
+    
     for (size_t i = 0; i <= hand.size()-1; i++)
     {
         uint8_t result;
@@ -389,6 +401,37 @@ GLint UpdateHand(std::vector<GLuint> &hand, int cursorPosition)
     return 0;
 }
 
+void SortHand(std::vector<GLuint> &hand)
+{
+    std::sort(hand.begin(), hand.end(), [](GLuint a, GLuint b) {
+        
+        uint8_t result;
+
+        Card &cardA = RetrieveCardReference(a, result);
+        Card &cardB = RetrieveCardReference(b, result);
+
+        // if (!result) { TRACE ("Couldn't retrieve Card with ID: %d", hand[a]);}
+        // if (!result) { TRACE ("Couldn't retrieve Card with ID: %d", hand[b]);}
+
+
+        int paloA = cardA.house;
+        int paloB = cardB.house;
+        int valorA = cardA.level;
+        int valorB = cardB.level;
+
+        if (paloA != paloB)
+        {
+            return paloA < paloB; 
+        }
+
+       
+        return valorA > valorB;
+    });
+
+}
+
+
+
 void RenderHand(std::vector<GLuint> &hand)
 {
 
@@ -417,6 +460,23 @@ GLint AddCardToHand(GLuint cardID, std::vector<GLuint> &hand,  std::vector<GLuin
 
     TRACE("Adding Card to hand. ID: %d", cardID);
     hand.push_back(cardID);
+
+    return 0;
+}
+
+GLint DrawTopCard(std::vector<GLuint> &hand, std::vector<GLuint> &deck)
+{
+    if (deck.empty()) {
+        TRACE("Error: Intentando robar de un mazo vacío.");
+        return 0;
+    }
+
+    GLuint topCardID = deck.back();
+    
+    deck.pop_back();
+
+    TRACE("Robando carta. ID: %d", topCardID);
+    hand.push_back(topCardID);
 
     return 0;
 }

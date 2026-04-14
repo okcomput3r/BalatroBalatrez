@@ -131,6 +131,9 @@ GLint DestroyCardTextures();
 
 GLuint RetrieveBaseCardShader();
 
+
+
+
 // CARD MANIPULATION METHODS
 
 // There is no need to a destroyCard() method because all the cards will
@@ -147,6 +150,8 @@ GLuint RetrieveBaseCardShader();
  *
  * */
 void DrawCard(GLuint CardID);
+
+GLint DrawTopCard(std::vector<GLuint> &hand, std::vector<GLuint> &deck);
 
 
 /***
@@ -187,6 +192,8 @@ Card &RetrieveCardReference(GLuint CardID, uint8_t &result);
  *
  */
 GLint UpdateCardPosition(GLuint CardID, float (&position)[3]);
+
+void SortHand(std::vector<GLuint> &hand);
 
 
 /***

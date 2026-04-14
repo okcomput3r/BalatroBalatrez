@@ -9,6 +9,8 @@
 #include <vector>
 #include <queue>
 
+
+
 #include <dirent.h>
 
 // Include the main libnx system header, for Switch development
@@ -143,13 +145,18 @@ int APP::SetupScene()
 
     LoadDeck(globalDeck);
 
+    
+
     for (int i = 1; i <= handSize; i++ )
     {
-        AddCardToHand(i, globalHand, globalDeck);
+        //AddCardToHand(i, globalHand, globalDeck);
+        DrawTopCard(globalHand, globalDeck);
     }
 
-    // Posiciona el cursor en medio de la baraja y selecciona la carta
-    cursor = globalHand.size()/2;
+    SortHand(globalHand);
+
+    // Posiciona el cursor al principio de la baraja
+    cursor = 0;
 
     // Load SFX into memory
     s_sfxCardSelect = Audio::LoadSFX("romfs:/data/audio/card_select.wav");
@@ -244,9 +251,14 @@ void APP::Update()
             {
                 TRACE("MOVING CARD FROM HAND TO DECK. DECK SIZE: %ld", globalDeck.size());
                 if(globalDeck.size() == 0) {break;}
-                AddCardToHand(globalDeck[globalDeck.size()-1], globalHand, globalDeck);
+                //AddCardToHand(globalDeck[globalDeck.size()-1], globalHand, globalDeck);
+                DrawTopCard(globalHand, globalDeck);
+                SortHand(globalHand);
+                Audio::PlaySFX(s_sfxCardSelect, 60);
             }
         }
+
+        cursor = 0;
 
     }
 
