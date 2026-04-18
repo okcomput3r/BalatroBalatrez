@@ -22,3 +22,7 @@ void lerpf(float &currentAngle, float &endAngle, float &angle, float t)
 
     (currentAngle > endAngle) ? angle = (currentAngle - endAngle) * t : angle = (endAngle - currentAngle) * t;
 }
+
+float LerpSimple(float start, float end, float t) {
+    return start + (end - start) * t;
+}

@@ -31,6 +31,8 @@
 #include <Graphics/shaders.h>
 #include <Graphics/textures.h>
 #include <Graphics/cards.h>
+#include <Graphics/image.h>
+
 #include <Utils/logs.h>
 #include <Utils/math.h>
 #include <Utils/audio.h>
@@ -62,6 +64,9 @@ std::vector<GLuint> globalDeck;
 std::vector<GLuint> globalHand;
 int cursor;
 
+ImageData backgroundLogo;
+ImageData imagee;
+
 Mix_Chunk* s_sfxCardSelect = nullptr;
 Mix_Chunk* s_sfxCardUnselect = nullptr;
 
@@ -69,6 +74,20 @@ uint8_t maxSelectedCards = 5;
 uint8_t selectedCardsCount = 0;
 
 uint8_t handSize = 8;
+
+
+void InitializeImage(ImageData& img, float positionX, float positionY, const std::string& png){
+
+    if (!InitImage(img, "romfs:/data/shaders/cardBase.vert", "romfs:/data/shaders/imageBase.frag", "romfs:/data/textures/" + png)) {
+        TRACE("WARNING: No se pudo cargar la imagen.");
+    }
+    img.posX = positionX;
+    img.posY = positionY;
+
+    img.targetX = positionX;
+    img.targetY = positionY;
+
+}
 
 int APP::ConfigureApplication()
 {
@@ -137,6 +156,11 @@ GLuint cardHandle;
 int APP::SetupScene()
 {
     TRACE("START SETUP OF SCENE");
+
+    InitializeImage(backgroundLogo, 1920.0f / 2, 2000.0f, "Font.png");
+    InitializeImage(imagee, 1920.0f / 2, -1000.0f, "Font.png");
+   
+
 
     // Cards.h
     LoadBaseCardBuffers();
@@ -262,18 +286,64 @@ void APP::Update()
 
     }
 
+    //Pruebas de Lerp de las imagenes
+
+    if (botonesPulsados & HidNpadButton_Y) {
+        backgroundLogo.targetX = 1920.0f / 2.0f;
+        backgroundLogo.targetY = 1080.0f / 2.0f; 
+        imagee.targetX = 1920.0f / 2.0f; 
+        imagee.targetY = 1080.0f / 2.0f; 
+    }
+
+    if (botonesPulsados & HidNpadButton_B) {
+        backgroundLogo.targetX = 1920.0f / 2.0f; 
+        backgroundLogo.targetY = 2000.0f; 
+        imagee.targetX = 1920.0f / 2.0f; 
+        imagee.targetY = -1000.0f;
+    }
+
+    backgroundLogo.posX = LerpSimple(backgroundLogo.posX, backgroundLogo.targetX, delta_time * 7.0f);
+    backgroundLogo.posY = LerpSimple(backgroundLogo.posY, backgroundLogo.targetY, delta_time * 7.0f);
+
+    imagee.posX = LerpSimple(imagee.posX, imagee.targetX, delta_time * 7.0f);
+    imagee.posY = LerpSimple(imagee.posY, imagee.targetY, delta_time * 7.0f);
+
     UpdateHand(globalHand, cursor);
 
     updateLogs();
 }
+
+
+
 
 void APP::Render()
 {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    float screen_width = 1920.0f;
+    float screen_height = 1080.0f;
+
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glm::mat4 projection = glm::ortho(0.0f, (float)screen_width, (float)screen_height, 0.0f, -1.0f, 1.0f);
+
+    glm::mat4 model = glm::mat4(1.0f);
+
+
+    DibujarImagen(imagee, projection, model);
+
+
     RenderHand(globalHand);
     RenderDeck(globalDeck);
+
+
+    DibujarImagen(backgroundLogo, projection, model);
+
+    
+
+    
 
     SDL_GL_SwapWindow(window);
     //TRACE("END OF RENDER at time %d", SDL_GetTicks());
@@ -281,8 +351,11 @@ void APP::Render()
 }
 
 
+
+
 void APP::CleanApplication()
 {   
+    //DestroyImage(backgroundLogo);
     //destroyShaderProgram(cardBaseShader);
     //texDestroy(textureFront);
     //texDestroy(textureBack);
