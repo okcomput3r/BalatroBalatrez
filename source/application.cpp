@@ -63,9 +63,14 @@ SDL_GLContext GLcontext;  // GLES (OpenGL for Embeded System) context for shader
 std::vector<GLuint> globalDeck;
 std::vector<GLuint> globalHand;
 int cursor;
+std::string manoJugada = "";
+std::string orden = "POR PALOS";
+bool typeOfSort = true;
+
 
 ImageData backgroundLogo;
 ImageData imagee;
+ImageData atlasss;
 
 Mix_Chunk* s_sfxCardSelect = nullptr;
 Mix_Chunk* s_sfxCardUnselect = nullptr;
@@ -159,8 +164,12 @@ int APP::SetupScene()
 
     InitializeImage(backgroundLogo, 1920.0f / 2, 2000.0f, "Font.png");
     InitializeImage(imagee, 1920.0f / 2, -1000.0f, "Font.png");
-   
 
+    InitializeImage(atlasss, 0, 0, "Font.png");
+
+    InitializeAtlas(atlasss, 15, 8, 20.0f, 20.0f);
+
+   
 
     // Cards.h
     LoadBaseCardBuffers();
@@ -177,7 +186,9 @@ int APP::SetupScene()
         DrawTopCard(globalHand, globalDeck);
     }
 
-    SortHand(globalHand);
+    if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
+
+    
 
     // Posiciona el cursor al principio de la baraja
     cursor = 0;
@@ -277,7 +288,7 @@ void APP::Update()
                 if(globalDeck.size() == 0) {break;}
                 //AddCardToHand(globalDeck[globalDeck.size()-1], globalHand, globalDeck);
                 DrawTopCard(globalHand, globalDeck);
-                SortHand(globalHand);
+                if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
                 Audio::PlaySFX(s_sfxCardSelect, 60);
             }
         }
@@ -289,17 +300,13 @@ void APP::Update()
     //Pruebas de Lerp de las imagenes
 
     if (botonesPulsados & HidNpadButton_Y) {
-        backgroundLogo.targetX = 1920.0f / 2.0f;
-        backgroundLogo.targetY = 1080.0f / 2.0f; 
-        imagee.targetX = 1920.0f / 2.0f; 
-        imagee.targetY = 1080.0f / 2.0f; 
+        typeOfSort = !typeOfSort;
+        if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
+        
     }
 
     if (botonesPulsados & HidNpadButton_B) {
-        backgroundLogo.targetX = 1920.0f / 2.0f; 
-        backgroundLogo.targetY = 2000.0f; 
-        imagee.targetX = 1920.0f / 2.0f; 
-        imagee.targetY = -1000.0f;
+        
     }
 
     backgroundLogo.posX = LerpSimple(backgroundLogo.posX, backgroundLogo.targetX, delta_time * 7.0f);
@@ -309,6 +316,10 @@ void APP::Update()
     imagee.posY = LerpSimple(imagee.posY, imagee.targetY, delta_time * 7.0f);
 
     UpdateHand(globalHand, cursor);
+
+    if(typeOfSort){ orden = "POR PALOS";} else {orden = "POR VALOR";}
+
+    manoJugada= EvaluateSelectedHand(globalHand);
 
     updateLogs();
 }
@@ -340,6 +351,21 @@ void APP::Render()
 
 
     DibujarImagen(backgroundLogo, projection, model);
+
+
+
+
+    DrawText(atlasss, "MANO SELECCIONADA:\n" + manoJugada, projection, 675.0f, 300.0f, 1.5f, -5.0f);
+
+    //DrawText(atlasss, "PUNTUACION: 999", projection, 100.0f, 150.0f, 2.0f);
+
+    //DrawText(atlasss, "LINEA UNO\nLINEA DOS", projection, 500.0f, 100.0f, 1.0f, -5.0f);
+
+
+    DrawText(atlasss, "ORDEN:\n" + orden, projection, 825.0f, 950.0f, 1.5f, -5.0f);
+
+
+
 
     
 

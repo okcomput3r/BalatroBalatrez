@@ -19,6 +19,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <algorithm>
+#include <map>
 #include <vector>
 #include <random>
 #include <ctime> //Necesario para randomizar la baraja con una seed distinta
@@ -401,7 +402,92 @@ GLint UpdateHand(std::vector<GLuint> &hand, int cursorPosition)
     return 0;
 }
 
-void SortHand(std::vector<GLuint> &hand)
+std::string EvaluateSelectedHand(std::vector<GLuint> &hand)
+{
+    if (hand.size() == 0) return "";
+
+    std::vector<Card> selectedCards;
+
+    // Primero extraemos solo las cartas que están seleccionadas
+    for (size_t i = 0; i < hand.size(); i++)
+    {
+        uint8_t result;
+        Card &cardRef = RetrieveCardReference(hand[i], result);
+        
+        if (!result) { 
+            TRACE("Couldn't retrieve Card with ID: %d", hand[i]); 
+            continue; 
+        }
+
+        if (cardRef.selected) {
+            selectedCards.push_back(cardRef);
+        }
+    }
+
+    // Si no hay cartas seleccionadas o solo hay una ("" ayuda con tema Interfaz)
+    int numCards = selectedCards.size();
+    if (numCards == 0) return "";
+    if (numCards == 1) return "Carta Alta";
+
+    std::map<int, int> rankCount;
+    std::map<Card_House, int> suitCount;
+
+    for (const Card& c : selectedCards) {
+        rankCount[c.level]++;
+        suitCount[c.house]++;
+    }
+
+    // Clasificamos qué agrupaciones tenemos (pares, tríos, póker)
+    int pairs = 0;
+    int threes = 0;
+    int fours = 0;
+
+    for (auto const& [rank, count] : rankCount) {
+        if (count == 2) pairs++;
+        else if (count == 3) threes++;
+        else if (count == 4) fours++;
+    }
+
+    // COMPROBAMOS COLOR, Todas las cartas tienen el mismo palo y hemos seleccionado al menos 5
+    bool isFlush = (suitCount.size() == 1 && numCards >= 5);
+
+    // COMPROBAR ESCALERA
+    bool isStraight = false;
+    // Una escalera necesita al menos 5 cartas (ajustar si necesario) y no tener números repetidos
+    if (numCards >= 5 && rankCount.size() == numCards) {
+        
+        // Extraemos los niveles y los ordenamos de menor a mayor
+        std::vector<int> levels;
+        for (const Card& c : selectedCards) {
+            levels.push_back(c.level);
+        }
+        std::sort(levels.begin(), levels.end());
+
+        isStraight = true;
+        // Comprobamos que cada carta sea exactamente 1 valor mayor que la anterior
+        for (size_t i = 1; i < levels.size(); i++) {
+            if (levels[i] != levels[i-1] + 1) {
+                isStraight = false;
+                break;
+            }
+        }
+        
+    }
+
+    // 5. DEVOLVER EL RESULTADO (Ordenado de mayor valor a menor valor)
+    if (isStraight && isFlush) return "Escalera de Color";
+    if (fours > 0)             return "Poker";
+    if (threes > 0 && pairs > 0) return "Full House";
+    if (isFlush)               return "Color";
+    if (isStraight)            return "Escalera";
+    if (threes > 0)            return "Trio";
+    if (pairs == 2)            return "Doble Pareja";
+    if (pairs == 1)            return "Pareja";
+
+    return "Carta Alta";
+}
+
+void SortHandSuit(std::vector<GLuint> &hand)
 {
     std::sort(hand.begin(), hand.end(), [](GLuint a, GLuint b) {
         
@@ -426,6 +512,35 @@ void SortHand(std::vector<GLuint> &hand)
 
        
         return valorA > valorB;
+    });
+
+}
+
+void SortHandValue(std::vector<GLuint> &hand)
+{
+    std::sort(hand.begin(), hand.end(), [](GLuint a, GLuint b) {
+        
+        uint8_t result;
+
+        Card &cardA = RetrieveCardReference(a, result);
+        Card &cardB = RetrieveCardReference(b, result);
+
+        // if (!result) { TRACE ("Couldn't retrieve Card with ID: %d", hand[a]);}
+        // if (!result) { TRACE ("Couldn't retrieve Card with ID: %d", hand[b]);}
+
+
+        int paloA = cardA.house;
+        int paloB = cardB.house;
+        int valorA = cardA.level;
+        int valorB = cardB.level;
+
+        if (valorA != valorB)
+        {
+            return valorA > valorB; 
+        }
+
+       
+        return paloA > paloB;
     });
 
 }

@@ -3,6 +3,11 @@
 #include <GLES3/gl3.h>
 #include <vector>
 #include <queue>
+#include <map>
+#include <algorithm>
+#include <string>
+
+
 
 
 #define SCREEN_W 1920
@@ -193,7 +198,8 @@ Card &RetrieveCardReference(GLuint CardID, uint8_t &result);
  */
 GLint UpdateCardPosition(GLuint CardID, float (&position)[3]);
 
-void SortHand(std::vector<GLuint> &hand);
+void SortHandValue(std::vector<GLuint> &hand);
+void SortHandSuit(std::vector<GLuint> &hand);
 
 
 /***
@@ -252,3 +258,6 @@ GLint RemoveCardsFromHand(std::vector<GLuint> &hand);
 void RenderDeck(std::vector<GLuint> &deck);
 
 void RenderHand(std::vector<GLuint> &hand);
+
+std::string EvaluateSelectedHand(std::vector<GLuint> &hand);
+

@@ -116,8 +116,8 @@ bool LoadImageTextures(ImageData& img, const std::string& texturePath) {
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     //stbi_set_flip_vertically_on_load(false);
 
@@ -164,5 +164,114 @@ void DibujarImagen(ImageData img, glm::mat4 projection, glm::mat4 model) {
 
     glm::mat4 finalTransform = projection * model;
     DrawImage(img, finalTransform);
+}
+
+
+void DefineAtlasSprite(ImageData& img, int spriteID, float pixelX, float pixelY, float width, float height) {
+    SpriteDef sprite;
+    sprite.pixelWidth = width;
+    sprite.pixelHeight = height;
+
+    // Qué porcentaje del total del atlas ocupa este sprite (de 0.0 a 1.0)
+    sprite.uv_scale.x = width / (float)img.width;
+    sprite.uv_scale.y = height / (float)img.height;
+
+    // En qué porcentaje empieza el recorte
+    sprite.uv_offset.x = pixelX / (float)img.width;
+    
+    // Invertimos la Y para que coincida con la lectura de OpenGL
+    sprite.uv_offset.y = 1.0f - ((pixelY + height) / (float)img.height);
+
+    // Lo guardamos en el diccionario con su ID
+    img.sprites[spriteID] = sprite;
+}
+
+void DrawAtlasSprite(const ImageData& img, int spriteID, const glm::mat4& projection, float posX, float posY, float scale) {
+    // Comprobamos que el ID exista para no crashear
+    if (img.sprites.find(spriteID) == img.sprites.end()) {
+        std::cerr << "Error: Sprite ID " << spriteID << " no encontrado en el atlas." << std::endl;
+        return;
+    }
+
+    // Recuperamos los datos del recorte
+    SpriteDef sprite = img.sprites.at(spriteID);
+
+    float finalWidth = sprite.pixelWidth * scale;
+    float finalHeight = sprite.pixelHeight * scale;
+
+    glm::mat4 model = glm::mat4(1.0f);
+    
+    // Usamos el tamaño final para calcular el centro exacto
+    model = glm::translate(model, glm::vec3(posX + (finalWidth / 2.0f), posY + (finalHeight / 2.0f), 0.0f));
+    
+    // Aplicamos el tamaño final a la matriz de escala
+    model = glm::scale(model, glm::vec3(finalWidth, finalHeight, 1.0f));
+
+    glm::mat4 finalTransform = projection * model;
+
+    // Llamamos al DrawImage pasándole los UVs calculados
+    DrawImage(img, finalTransform, sprite.uv_offset, sprite.uv_scale);
+}
+
+void InitializeAtlas(ImageData& img, int col, int row, float sizeX, float sizeY){
+    int columnas = col; // 15
+    int filas = row;    // 8
+    int id_actual = 0;
+
+    for (int y = filas - 1; y >= 0; y--) {
+        for (int x = 0; x < columnas; x++) {
+            // Calculamos en qué píxel cae esta columna y fila
+            float pixelX = x * sizeX; //20.0f;
+            float pixelY = y * sizeY; //20.0f;
+
+            // Registramos el sprite
+            DefineAtlasSprite(img, id_actual, pixelX, pixelY, sizeX, sizeY);
+            
+            id_actual++;
+        }
+    }
+}
+
+void DrawText(const ImageData& fontAtlas, const std::string& text, const glm::mat4& projection, float posX, float posY, float scale, float letterSpacing) {
+    float currentX = posX;
+    float currentY = posY;
+
+    for (char c : text) {
+        // Manejamos los saltos de línea
+        if (c == '\n') {
+            currentX = posX; // Volvemos al principio del margen izquierdo
+            
+            // Usamos la altura de la letra A para saber cuánto bajar, o 20px por defecto
+            if (fontAtlas.sprites.find(33) != fontAtlas.sprites.end()) {
+                currentY += fontAtlas.sprites.at(33).pixelHeight * scale;
+            } else {
+                currentY += 20.0f * scale; 
+            }
+            continue;
+        }
+
+        // Convertir el carácter ASCII a nuestro ID del atlas (ASCII 65 'A' - 32 = ID 33)
+        int spriteID = (int)c - 32;
+
+        // Comprobamos si el sprite existe en el diccionario
+        if (fontAtlas.sprites.find(spriteID) != fontAtlas.sprites.end()) {
+            SpriteDef sprite = fontAtlas.sprites.at(spriteID);
+            
+            // Si no es un espacio en blanco (el ID 0 suele ser el espacio en ASCII-32), lo dibujamos
+            // (Aun si lo dibujas, al estar vacío no se verá, pero saltarlo ahorra rendimiento)
+            if (spriteID != 0) {
+                DrawAtlasSprite(fontAtlas, spriteID, projection, currentX, currentY, scale);
+            }
+            
+            // Avanzamos donde escribimos hacia la derecha para la siguiente letra
+            currentX += (sprite.pixelWidth * scale) + letterSpacing;
+        } else {
+            // Si el carácter no existe en el atlas,
+            // dejamos un espacio del ancho de la Apara no descolocar el texto.
+            if (fontAtlas.sprites.find(33) != fontAtlas.sprites.end()) {
+                currentX += (fontAtlas.sprites.at(33).pixelWidth * scale) + letterSpacing;
+            }
+        }
+    }
 }
 
