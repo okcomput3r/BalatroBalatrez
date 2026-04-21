@@ -32,6 +32,7 @@
 #include <Graphics/textures.h>
 #include <Graphics/cards.h>
 #include <Graphics/image.h>
+//#include <Graphics/jokers.h>  
 
 #include <Utils/logs.h>
 #include <Utils/math.h>
@@ -71,6 +72,7 @@ bool typeOfSort = true;
 ImageData backgroundLogo;
 ImageData imagee;
 ImageData atlasss;
+ImageData Jokers;  
 
 Mix_Chunk* s_sfxCardSelect = nullptr;
 Mix_Chunk* s_sfxCardUnselect = nullptr;
@@ -79,6 +81,9 @@ uint8_t maxSelectedCards = 5;
 uint8_t selectedCardsCount = 0;
 
 uint8_t handSize = 8;
+
+uint8_t jokerHandSize = 5;
+uint8_t jokers_in_hand = 0;
 
 
 void InitializeImage(ImageData& img, float positionX, float positionY, const std::string& png){
@@ -166,8 +171,12 @@ int APP::SetupScene()
     InitializeImage(imagee, 1920.0f / 2, -1000.0f, "Font.png");
 
     InitializeImage(atlasss, 0, 0, "Font.png");
+    InitializeImage(Jokers, 0, 0, "Jokers.png");  
 
     InitializeAtlas(atlasss, 15, 8, 20.0f, 20.0f);
+    InitializeAtlas(Jokers, 10, 16, 142.0f, 190.0f); 
+
+
 
    
 
@@ -178,7 +187,6 @@ int APP::SetupScene()
 
     LoadDeck(globalDeck);
 
-    
 
     for (int i = 1; i <= handSize; i++ )
     {
@@ -352,10 +360,17 @@ void APP::Render()
 
     DibujarImagen(backgroundLogo, projection, model);
 
+    DrawText(atlasss, std::to_string(jokers_in_hand) + " / " + std::to_string(jokerHandSize), projection, (screen_width/2.0f) + 320.0f, 130.0f, 1.5f, -5.0f);
+    
+    for (int i = 0; i < jokerHandSize; i++)
+    {
+        DrawAtlasSprite(Jokers, i, projection,  (screen_width/2.0f) -125.0f*2.5f + 125.0f * i , 80.0f, 0.8f); 
+    }
 
 
 
-    DrawText(atlasss, "MANO SELECCIONADA:\n" + manoJugada, projection, 675.0f, 300.0f, 1.5f, -5.0f);
+
+    DrawText(atlasss, "MANO SELECCIONADA:\n" + manoJugada, projection, 675.0f, 570.0f, 1.5f, -5.0f);
 
     //DrawText(atlasss, "PUNTUACION: 999", projection, 100.0f, 150.0f, 2.0f);
 
