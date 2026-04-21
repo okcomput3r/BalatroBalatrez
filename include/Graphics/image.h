@@ -21,6 +21,7 @@ struct ImageData {
     GLuint VBO = 0;
     GLuint EBO = 0;
     GLuint textureID = 0;
+    bool imageSelected = false;
     int width = 0;
     int height = 0;
     float posX = 0.0f;

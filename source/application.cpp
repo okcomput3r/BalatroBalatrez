@@ -64,6 +64,11 @@ SDL_GLContext GLcontext;  // GLES (OpenGL for Embeded System) context for shader
 std::vector<GLuint> globalDeck;
 std::vector<GLuint> globalHand;
 int cursor;
+bool seleccionableCursor = true;
+
+int cursorInterfaz;
+bool seleccionableInterfaz = false;
+
 std::string manoJugada = "";
 std::string orden = "POR PALOS";
 bool typeOfSort = true;
@@ -199,7 +204,9 @@ int APP::SetupScene()
     
 
     // Posiciona el cursor al principio de la baraja
-    cursor = 0;
+    if (seleccionableCursor){
+        cursor = 0;
+    }
 
     // Load SFX into memory
     s_sfxCardSelect = Audio::LoadSFX("romfs:/data/audio/card_select.wav");
@@ -236,17 +243,22 @@ void APP::Update()
     
     // Mover el cursor a la Izquierda
     if (botonesPulsados & HidNpadButton_Left) {
-        if (cursor > 0) {
-            cursor--; // Nos movemos una carta a la izquierda
-        }
+        if (seleccionableCursor){
+                if (cursor > 0) {
+                cursor--; // Nos movemos una carta a la izquierda
+                }
+            }
     }
 
     // Mover el cursor a la Derecha
     if (botonesPulsados & HidNpadButton_Right) {
         // Asegurarnos de no salirnos de la mano
-        if ((size_t) cursor < globalHand.size() - 1) { 
+        if (seleccionableCursor){
+            if ((size_t) cursor < globalHand.size() - 1) { 
             cursor++; 
+            }
         }
+        
     }
 
     
@@ -256,8 +268,10 @@ void APP::Update()
         uint8_t result;
         Card &cardRef = RetrieveCardReference(globalHand[cursor], result);
 
-        if( (selectedCardsCount >= 0 && cardRef.selected) || (selectedCardsCount < maxSelectedCards && !cardRef.selected) )
-        {
+        if (seleccionableCursor){
+
+            if( (selectedCardsCount >= 0 && cardRef.selected) || (selectedCardsCount < maxSelectedCards && !cardRef.selected) )
+            {
 
             if(!cardRef.selected) 
             {
@@ -275,7 +289,11 @@ void APP::Update()
             }
             cardRef.selected = !cardRef.selected;
         
+            }
+
         }
+
+        
     }
 
     // borra las cartas seleccionadas
@@ -314,6 +332,7 @@ void APP::Update()
     }
 
     if (botonesPulsados & HidNpadButton_B) {
+        seleccionableCursor = !seleccionableCursor;
         
     }
 
