@@ -128,9 +128,15 @@ GLuint CreateBaseCard(Card_House house, int level)
         s_cardReferences[ID-1].position[1] = 0.0f;
         s_cardReferences[ID-1].position[2] = 0.0f;
 
+        s_cardReferences[ID-1].rotation[0] = 0.0f;
+        s_cardReferences[ID-1].rotation[1] = 0.0f;
+        s_cardReferences[ID-1].rotation[2] = 0.0f;
+
         s_cardReferences[ID-1].scale[0] = CARD_SIZE;
         s_cardReferences[ID-1].scale[1] = CARD_SIZE * CARD_RATIO;
         s_cardReferences[ID-1].scale[2] = 1.0f;
+
+
 
         s_cardReferences[ID-1].angle = 0.0f;
 
@@ -150,6 +156,10 @@ GLuint CreateBaseCard(Card_House house, int level)
         newCard.position[1] = 0.0f;
         newCard.position[2] = 0.0f;
         
+        newCard.rotation[0] = 0.0f;
+        newCard.rotation[1] = 0.0f;
+        newCard.rotation[2] = 0.0f;
+
         newCard.scale[0] = CARD_SIZE;
         newCard.scale[1] = CARD_SIZE * CARD_RATIO;
         newCard.scale[2] = 1.0f;
@@ -265,7 +275,9 @@ void DrawCard(GLuint CardID)
     
     s_transformMatrix = glm::translate(s_transformMatrix, glm::vec3(clipPosition[0],clipPosition[1],clipPosition[2]));
     s_transformMatrix = glm::scale(s_transformMatrix, glm:: vec3(cardToRender.scale[0],cardToRender.scale[1],cardToRender.scale[2]));
-    s_transformMatrix = glm::rotate(s_transformMatrix,  glm::radians(cardToRender.angle), glm::vec3(0.0f, 1.0f, 0.0f));
+    s_transformMatrix = glm::rotate(s_transformMatrix,  glm::radians(cardToRender.rotation[1]), glm::vec3(0.0f, 1.0f, 0.0f));
+    s_transformMatrix = glm::rotate(s_transformMatrix,  glm::radians(cardToRender.rotation[2]), glm::vec3(0.0f, 0.0f, 1.0f));
+
 
     glUniformMatrix4fv(s_transformLoc, 1, GL_FALSE, glm::value_ptr(s_transformMatrix));
 
@@ -347,7 +359,7 @@ void RenderDeck(std::vector<GLuint> &deck)
     }
 }
 
-GLint UpdateHand(std::vector<GLuint> &hand, int cursorPosition)
+GLint UpdateHand(std::vector<GLuint> &hand, int cursorPosition, float deltaTIme)
 {
     if (hand.size() == 0) {return 0;}
     
@@ -357,42 +369,38 @@ GLint UpdateHand(std::vector<GLuint> &hand, int cursorPosition)
         Card &cardRef = RetrieveCardReference(hand[i], result);
         if (!result) { TRACE ("Couldn't retrieve Card with ID: %d", hand[i]);}
 
-        // actualiza la posición para que esté boca arriba
+        // actualiza la rotación en el eje y para que esté boca arriba
         float lerpAngle;
         float destAngle = 180.0f;
-        lerpf(cardRef.angle, destAngle, lerpAngle, 0.05f);
+        lerpf(cardRef.rotation[1], destAngle, lerpAngle, 0.05f);
+
 
         // actualiza la posición y comprueba si está seleccionada
         float lerpPosition[3] = {0.0f,0.0f,0.0f};
         float destPosition[3];
 
-
-        
         // si la carta está seleccionada, actualizar su posición 50 pixeles por encima de las demás
-        if(!cardRef.selected)
-        {
-            destPosition[0] = (float) HAND_POSITION_X + (i * (CARD_W + (float) HAND_TOTAL_SIZE) / hand.size());
-            destPosition[1] = (float) HAND_POSITION_Y;
-            destPosition[2] = 0.0f;
-        }
-        else
-        {
-            destPosition[0] = (float) HAND_POSITION_X + (i * (CARD_W + (float) HAND_TOTAL_SIZE) / hand.size());
-            destPosition[1] = (float) HAND_POSITION_Y + 50.0f;
-            destPosition[2] = 0.0f;
-        }
 
+        // [i,hand.size()] -> [-hand.size()/2 , hand.size()/2]
+        float newindex = (float) i - (float) (hand.size()/2);
 
-        // si la posición de la carta en la mano es igual a la posición del cursor
-        // se aumenta la posicion y de la carta 30px
+        destPosition[0] = (float) HAND_POSITION_X + (i * (CARD_W + (float) HAND_TOTAL_SIZE) / hand.size());
+        destPosition[1] = (float) HAND_POSITION_Y + ( static_cast<float>(-(glm::pow(newindex,2))));
+
+        //destPosition[1] = (float) HAND_POSITION_Y + ( static_cast<float>( (float) i / ( hand.size()/2 )) * 100.0f);
+
+        if(cardRef.selected)
+            destPosition[1] += 50.0f;
+
         if( i  == (size_t) cursorPosition)
-        {
             destPosition[1] += 30.0f;
-        }
 
         lerp(cardRef.position, destPosition, lerpPosition, 0.3f);
 
-        cardRef.angle += lerpAngle;
+        cardRef.rotation[1] += lerpAngle;
+        float maxOffset = 2.5f; 
+        cardRef.rotation[2] = glm::cos( glm::radians( (float) SDL_GetTicks() * 0.1f   + (i *HAND_TOTAL_SIZE)) ) * maxOffset ;
+
         cardRef.position[0] = lerpPosition[0];
         cardRef.position[1] = lerpPosition[1];
         cardRef.position[2] = lerpPosition[2]; 

@@ -96,6 +96,7 @@ typedef struct s_card{
 
     float position[3]; // position in space
     float scale[3];
+    float rotation[3];
     float angle;
     
     Card_States state;
@@ -233,7 +234,7 @@ GLint LoadDeck(std::vector<GLuint> &deck);
 *        - Lerping their rotation to face upwards
 *
 */
-GLint UpdateHand(std::vector<GLuint> &hand, int cursorPosition);
+GLint UpdateHand(std::vector<GLuint> &hand, int cursorPosition, float deltaTIme);
 
 /***
 *
