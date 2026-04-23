@@ -248,13 +248,16 @@ void InitializeAtlas(ImageData& img, int col, int row, float sizeX, float sizeY)
 }
 
 void DrawText(const ImageData& fontAtlas, const std::string& text, const glm::mat4& projection, float posX, float posY, float scale, float letterSpacing) {
-    float currentX = posX;
+
+    float sizee = text.size();
+    float currentX = posX - (sizee/2) * ((20.0f * scale) + letterSpacing);
+    
     float currentY = posY;
 
     for (char c : text) {
         // Manejamos los saltos de línea
         if (c == '\n') {
-            currentX = posX; // Volvemos al principio del margen izquierdo
+            currentX = posX - (sizee/2) * ((20.0f * scale) + letterSpacing); // Volvemos al principio del margen izquierdo
             
             // Usamos la altura de la letra A para saber cuánto bajar, o 20px por defecto
             if (fontAtlas.sprites.find(33) != fontAtlas.sprites.end()) {

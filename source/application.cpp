@@ -79,8 +79,12 @@ ImageData backgroundLogo;
 ImageData imagee;
 ImageData atlasss;
 ImageData Jokers;  
+ImageData barra;
+
 
 PauseMenuState menuPausa;
+estadoo estadoPartida;
+
 
 Mix_Chunk* s_sfxCardSelect = nullptr;
 Mix_Chunk* s_sfxCardUnselect = nullptr;
@@ -165,6 +169,7 @@ int APP::SetupScene()
 
     InitializeImage(backgroundLogo, 1920.0f / 2, 2000.0f, "Font.png");
     InitializeImage(imagee, 1920.0f / 2, 800.0f, "Font.png");
+    InitializeImage(barra, 100.0f, 0.0f, "barraInfo.png");
 
     InitializeImage(atlasss, 0, 0, "Font.png");
     InitializeImage(Jokers, 0, 0, "Jokers.png");  
@@ -369,6 +374,8 @@ void APP::Render()
     RenderHand(globalHand);
     RenderDeck(globalDeck);
 
+    DibujarImagen(barra, projection, model, 300.0f, 540.0f);
+
     
 
     DrawText(atlasss,std::to_string(ownedJokers.size()) +" / " + std::to_string(maxJokerHandSize)+ " JOKERS", projection, (screen_width/2.0f) + 320.0f, 130.0f, 1.5f, -5.0f);
@@ -380,11 +387,22 @@ void APP::Render()
     }
 
 
-    DrawText(atlasss, "MANO SELECCIONADA:\n" + manoJugada, projection, 675.0f, 570.0f, 1.5f, -5.0f);
+
+    DrawText(atlasss, manoJugada, projection, 300.0f, 520.0f, 1.5f, -5.0f);
+
+
+
+    DrawText(atlasss, std::to_string((int)estadoPartida.fichas), projection, 190.0f, 605.0f, 2.0f, -5.0f);
+    DrawText(atlasss, std::to_string((int)estadoPartida.mult), projection, 405.0f, 605.0f, 2.0f, -5.0f);
+
+    DrawText(atlasss, std::to_string(estadoPartida.manos), projection, 315.0f, 750.0f, 1.5f, -5.0f);
+    DrawText(atlasss, std::to_string(estadoPartida.descartes), projection, 445.0f, 750.0f, 1.5f, -5.0f);
 
     //DrawText(atlasss, "PUNTUACION: 999", projection, 100.0f, 150.0f, 2.0f);
 
     //DrawText(atlasss, "LINEA UNO\nLINEA DOS", projection, 500.0f, 100.0f, 1.0f, -5.0f);
+
+    DrawText(atlasss,"$" + std::to_string(estadoPartida.dinero), projection, 380.0f, 850.0f, 1.5f, -5.0f);
 
 
     DrawText(atlasss, "ORDEN:\n" + orden, projection, 825.0f, 950.0f, 1.5f, -5.0f);

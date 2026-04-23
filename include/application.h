@@ -2,6 +2,16 @@
 
 #define GAME_SPEED_MULT 5
 
+struct estadoo {
+    int puntuacionGlobal = 0;
+    float fichas = 0.0f;
+    float mult = 0.0f;
+    int dinero = 0;
+    int manos = 0;
+    int descartes = 0;
+    int ronda = 0;
+};
+
 namespace APP
 {
 
