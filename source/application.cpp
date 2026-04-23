@@ -327,7 +327,7 @@ void APP::Update()
             if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}  
         }
 
-        UpdateHand(globalHand, cursor);
+        UpdateHand(globalHand, cursor, delta_time);
 
         if(typeOfSort){ orden = "POR PALOS";} else {orden = "POR VALOR";}
 
