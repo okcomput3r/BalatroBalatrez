@@ -35,11 +35,12 @@ struct ImageData {
 
 bool InitImage(ImageData& img, const std::string& vertexPath, const std::string& fragmentPath, const std::string& texturePath);
 
+void InitializeImage(ImageData& img, float positionX, float positionY, const std::string& png);
+
 // Dibuja la imagen en pantalla
 void DrawImage(const ImageData& img, const glm::mat4& transform, const glm::vec2& uv_offset = glm::vec2(0.0f), const glm::vec2& uv_scale = glm::vec2(1.0f));
 
-void DibujarImagen(ImageData img, glm::mat4 projection, glm::mat4 model);
-
+void DibujarImagen(ImageData img, glm::mat4 projection, glm::mat4 model, float positionX, float positionY);
 void DestroyImage(ImageData& img);
 
 void LoadImageBuffers(ImageData& img);

@@ -33,6 +33,7 @@
 #include <Graphics/cards.h>
 #include <Graphics/image.h>
 //#include <Graphics/jokers.h>  
+#include <Graphics/pause.h>
 
 #include <Utils/logs.h>
 #include <Utils/math.h>
@@ -64,7 +65,7 @@ SDL_GLContext GLcontext;  // GLES (OpenGL for Embeded System) context for shader
 std::vector<GLuint> globalDeck;
 std::vector<GLuint> globalHand;
 int cursor;
-bool seleccionableCursor = true;
+bool pausa = true;
 
 int cursorInterfaz;
 bool seleccionableInterfaz = false;
@@ -79,6 +80,8 @@ ImageData imagee;
 ImageData atlasss;
 ImageData Jokers;  
 
+PauseMenuState menuPausa;
+
 Mix_Chunk* s_sfxCardSelect = nullptr;
 Mix_Chunk* s_sfxCardUnselect = nullptr;
 
@@ -91,18 +94,7 @@ uint8_t jokerHandSize = 5;
 uint8_t jokers_in_hand = 0;
 
 
-void InitializeImage(ImageData& img, float positionX, float positionY, const std::string& png){
 
-    if (!InitImage(img, "romfs:/data/shaders/cardBase.vert", "romfs:/data/shaders/imageBase.frag", "romfs:/data/textures/" + png)) {
-        TRACE("WARNING: No se pudo cargar la imagen.");
-    }
-    img.posX = positionX;
-    img.posY = positionY;
-
-    img.targetX = positionX;
-    img.targetY = positionY;
-
-}
 
 int APP::ConfigureApplication()
 {
@@ -173,13 +165,15 @@ int APP::SetupScene()
     TRACE("START SETUP OF SCENE");
 
     InitializeImage(backgroundLogo, 1920.0f / 2, 2000.0f, "Font.png");
-    InitializeImage(imagee, 1920.0f / 2, -1000.0f, "Font.png");
+    InitializeImage(imagee, 1920.0f / 2, 800.0f, "Font.png");
 
     InitializeImage(atlasss, 0, 0, "Font.png");
     InitializeImage(Jokers, 0, 0, "Jokers.png");  
 
     InitializeAtlas(atlasss, 15, 8, 20.0f, 20.0f);
-    InitializeAtlas(Jokers, 10, 16, 142.0f, 190.0f); 
+    InitializeAtlas(Jokers, 10, 16, 142.0f, 190.0f);
+
+    InitPauseMenu(menuPausa);
 
 
 
@@ -204,7 +198,7 @@ int APP::SetupScene()
     
 
     // Posiciona el cursor al principio de la baraja
-    if (seleccionableCursor){
+    if (pausa){
         cursor = 0;
     }
 
@@ -240,115 +234,113 @@ void APP::Update()
     padUpdate(&pad);
     u64 botonesPulsados = padGetButtonsDown(&pad);
 
-    
-    // Mover el cursor a la Izquierda
-    if (botonesPulsados & HidNpadButton_Left) {
-        if (seleccionableCursor){
-                if (cursor > 0) {
-                cursor--; // Nos movemos una carta a la izquierda
-                }
-            }
+    if (botonesPulsados & HidNpadButton_B) {
+        pausa = !pausa;
+        if (menuPausa.targetMenuY == 0.0f) {
+            menuPausa.targetMenuY = 1500.0f; // Si estaba arriba, lo mandamos abajo
+        } else {
+            menuPausa.targetMenuY = 0.0f;    // Si estaba abajo, lo mandamos arriba
+        }
     }
 
-    // Mover el cursor a la Derecha
-    if (botonesPulsados & HidNpadButton_Right) {
-        // Asegurarnos de no salirnos de la mano
-        if (seleccionableCursor){
-            if ((size_t) cursor < globalHand.size() - 1) { 
-            cursor++; 
+
+    UpdatePauseMenu(menuPausa, botonesPulsados, delta_time);
+    
+
+    if (pausa){
+        // Mover el cursor a la Izquierda
+        if (botonesPulsados & HidNpadButton_Left) {
+            if (cursor > 0) {
+                cursor--; // Nos movemos una carta a la izquierda
             }
         }
+
+        // Mover el cursor a la Derecha
+        if (botonesPulsados & HidNpadButton_Right) {
+            // Asegurarnos de no salirnos de la mano
+            if ((size_t) cursor < globalHand.size() - 1) { 
+                cursor++; 
+            }
+            
+        }
+
         
-    }
-
-    
-    // Seleccionar/Deseleccionar con la 'A'
-    if (botonesPulsados & HidNpadButton_A) {
-        // añadimos o substraemos la carta seleccionada al contador dependiendo si es true o false el valor selected
-        uint8_t result;
-        Card &cardRef = RetrieveCardReference(globalHand[cursor], result);
-
-        if (seleccionableCursor){
+        // Seleccionar/Deseleccionar con la 'A'
+        if (botonesPulsados & HidNpadButton_A) {
+            // añadimos o substraemos la carta seleccionada al contador dependiendo si es true o false el valor selected
+            uint8_t result;
+            Card &cardRef = RetrieveCardReference(globalHand[cursor], result);
 
             if( (selectedCardsCount >= 0 && cardRef.selected) || (selectedCardsCount < maxSelectedCards && !cardRef.selected) )
-            {
+                {
 
-            if(!cardRef.selected) 
-            {
-                TRACE("Selecting Card with ID %d", cardRef.ID);
+                if(!cardRef.selected) 
+                {
+                    TRACE("Selecting Card with ID %d", cardRef.ID);
 
-                selectedCardsCount++;
+                    selectedCardsCount++;
 
-                Audio::PlaySFX(s_sfxCardSelect, 60);
-            }else{
-                TRACE("Unselecting Card with ID %d", cardRef.ID);
+                    Audio::PlaySFX(s_sfxCardSelect, 60);
+                }else{
+                    TRACE("Unselecting Card with ID %d", cardRef.ID);
 
-                selectedCardsCount--;
+                    selectedCardsCount--;
 
-                Audio::PlaySFX(s_sfxCardUnselect, 60);
+                    Audio::PlaySFX(s_sfxCardUnselect, 60);
+                }
+                cardRef.selected = !cardRef.selected;
+            
             }
-            cardRef.selected = !cardRef.selected;
-        
-            }
 
+            
         }
 
-        
-    }
-
-    // borra las cartas seleccionadas
-    if (botonesPulsados & HidNpadButton_X)
-    {
-        if(selectedCardsCount != 0)
+        // borra las cartas seleccionadas
+        if (botonesPulsados & HidNpadButton_X)
         {
-            RemoveCardsFromHand(globalHand);
-            selectedCardsCount = 0;
-        }
-        
-       // si el tamaño de la baraja es menor que el tamaño real de la baraja
-        if(globalDeck.size() > 0 && globalHand.size() < handSize)
-        {
-            while(globalHand.size() < handSize )
+            if(selectedCardsCount != 0)
             {
-                TRACE("MOVING CARD FROM HAND TO DECK. DECK SIZE: %ld", globalDeck.size());
-                if(globalDeck.size() == 0) {break;}
-                //AddCardToHand(globalDeck[globalDeck.size()-1], globalHand, globalDeck);
-                DrawTopCard(globalHand, globalDeck);
-                if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
-                Audio::PlaySFX(s_sfxCardSelect, 60);
+                RemoveCardsFromHand(globalHand);
+                selectedCardsCount = 0;
             }
+            
+        // si el tamaño de la baraja es menor que el tamaño real de la baraja
+            if(globalDeck.size() > 0 && globalHand.size() < handSize)
+            {
+                while(globalHand.size() < handSize )
+                {
+                    TRACE("MOVING CARD FROM HAND TO DECK. DECK SIZE: %ld", globalDeck.size());
+                    if(globalDeck.size() == 0) {break;}
+                    //AddCardToHand(globalDeck[globalDeck.size()-1], globalHand, globalDeck);
+                    DrawTopCard(globalHand, globalDeck);
+                    if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
+                    Audio::PlaySFX(s_sfxCardSelect, 60);
+                }
+            }
+
+            cursor = 0;
+
         }
 
-        cursor = 0;
+
+        if (botonesPulsados & HidNpadButton_Y) {
+            typeOfSort = !typeOfSort;
+            if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}  
+        }
+
+        UpdateHand(globalHand, cursor);
+
+        if(typeOfSort){ orden = "POR PALOS";} else {orden = "POR VALOR";}
+
+        manoJugada= EvaluateSelectedHand(globalHand);
+
+        updateLogs();
+
 
     }
 
-    //Pruebas de Lerp de las imagenes
-
-    if (botonesPulsados & HidNpadButton_Y) {
-        typeOfSort = !typeOfSort;
-        if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
-        
-    }
-
-    if (botonesPulsados & HidNpadButton_B) {
-        seleccionableCursor = !seleccionableCursor;
-        
-    }
-
-    backgroundLogo.posX = LerpSimple(backgroundLogo.posX, backgroundLogo.targetX, delta_time * 7.0f);
-    backgroundLogo.posY = LerpSimple(backgroundLogo.posY, backgroundLogo.targetY, delta_time * 7.0f);
-
-    imagee.posX = LerpSimple(imagee.posX, imagee.targetX, delta_time * 7.0f);
-    imagee.posY = LerpSimple(imagee.posY, imagee.targetY, delta_time * 7.0f);
-
-    UpdateHand(globalHand, cursor);
-
-    if(typeOfSort){ orden = "POR PALOS";} else {orden = "POR VALOR";}
-
-    manoJugada= EvaluateSelectedHand(globalHand);
-
-    updateLogs();
+    
+    
 }
 
 
@@ -370,14 +362,12 @@ void APP::Render()
     glm::mat4 model = glm::mat4(1.0f);
 
 
-    DibujarImagen(imagee, projection, model);
 
 
     RenderHand(globalHand);
     RenderDeck(globalDeck);
 
 
-    DibujarImagen(backgroundLogo, projection, model);
 
     DrawText(atlasss, std::to_string(jokers_in_hand) + " / " + std::to_string(jokerHandSize), projection, (screen_width/2.0f) + 320.0f, 130.0f, 1.5f, -5.0f);
     
@@ -399,6 +389,10 @@ void APP::Render()
     DrawText(atlasss, "ORDEN:\n" + orden, projection, 825.0f, 950.0f, 1.5f, -5.0f);
 
 
+
+
+
+    RenderPauseMenu(menuPausa, projection, model, imagee);
 
 
     

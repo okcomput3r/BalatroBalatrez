@@ -2,6 +2,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <Utils/logs.h>
+
 
 #include "stb_image.h" 
 
@@ -39,6 +41,19 @@ bool InitImage(ImageData& img, const std::string& vertexPath, const std::string&
     LoadImageBuffers(img);
     if (!LoadImageTextures(img, texturePath)) return false;
     return true;
+}
+
+void InitializeImage(ImageData& img, float positionX, float positionY, const std::string& png){
+
+    if (!InitImage(img, "romfs:/data/shaders/cardBase.vert", "romfs:/data/shaders/imageBase.frag", "romfs:/data/textures/" + png)) {
+        TRACE("WARNING: No se pudo cargar la imagen.");
+    }
+    img.posX = positionX;
+    img.posY = positionY;
+
+    img.targetX = positionX;
+    img.targetY = positionY;
+
 }
 
 void DestroyImage(ImageData& img) {
@@ -156,9 +171,9 @@ void DrawImage(const ImageData& img, const glm::mat4& transform, const glm::vec2
     glBindVertexArray(0);
 }
 
-void DibujarImagen(ImageData img, glm::mat4 projection, glm::mat4 model) {
-    float PosX = img.posX;
-    float PosY = img.posY;
+void DibujarImagen(ImageData img, glm::mat4 projection, glm::mat4 model, float positionX, float positionY) {
+    float PosX = positionX;
+    float PosY = positionY;
     model = glm::translate(model, glm::vec3(PosX, PosY, 0.0f));
     model = glm::scale(model, glm::vec3((float)img.width, (float)img.height, 1.0f));
 
