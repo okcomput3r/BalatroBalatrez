@@ -39,6 +39,8 @@
 #include <Utils/math.h>
 #include <Utils/audio.h>
 
+#include <logic.h>
+
 // some switch buttons
 #define JOY_A     0
 #define JOY_B     1
@@ -83,7 +85,7 @@ ImageData barra;
 
 
 PauseMenuState menuPausa;
-estadoo estadoPartida;
+//EstadoPartida estadoPartida;
 
 
 Mix_Chunk* s_sfxCardSelect = nullptr;
@@ -216,6 +218,11 @@ int APP::SetupScene()
 
     TRACE("SCENE SETTED AND MUSIC STARTED");
 
+    // --- ¡NUEVO! INICIAMOS LA LÓGICA DE LA PARTIDA ---
+    IniciarNuevaPartida();
+    ConfigurarCiega(300.0f); // Puntuación objetivo de prueba (300 puntos)
+    // ------------------------------------------------
+
     return 0;
 }
 
@@ -299,7 +306,8 @@ void APP::Update()
             
         }
 
-        // borra las cartas seleccionadas
+        /* 
+        //borra las cartas seleccionadas
         if (botonesPulsados & HidNpadButton_X)
         {
             if(selectedCardsCount != 0)
@@ -308,7 +316,7 @@ void APP::Update()
                 selectedCardsCount = 0;
             }
             
-        // si el tamaño de la baraja es menor que el tamaño real de la baraja
+            // si el tamaño de la baraja es menor que el tamaño real de la baraja
             if(globalDeck.size() > 0 && globalHand.size() < handSize)
             {
                 while(globalHand.size() < handSize )
@@ -338,6 +346,93 @@ void APP::Update()
 
         manoJugada= EvaluateSelectedHand(globalHand);
 
+        std::vector<unsigned int> cartasSeleccionadas;
+        for (size_t i = 0; i < globalHand.size(); i++) {
+            uint8_t result;
+            Card &cardRef = RetrieveCardReference(globalHand[i], result);
+            if (result && cardRef.selected) {
+                cartasSeleccionadas.push_back(globalHand[i]); // Guardas el ID
+            }
+        }
+
+        updateLogs();
+
+        */
+       // =======================================================
+        // 1. EVALUAR LA MANO ACTUAL (Antes de pulsar ningún botón)
+        // =======================================================
+        manoJugada = EvaluateSelectedHand(globalHand);
+        
+        std::vector<unsigned int> cartasSeleccionadas;
+        for (size_t i = 0; i < globalHand.size(); i++) {
+            uint8_t result;
+            Card &cardRef = RetrieveCardReference(globalHand[i], result);
+            if (result && cardRef.selected) {
+                cartasSeleccionadas.push_back(globalHand[i]); 
+            }
+        }
+
+        // =======================================================
+        // 2. BOTÓN X: JUGAR LA MANO
+        // =======================================================
+        if (botonesPulsados & HidNpadButton_X)
+        {
+            // Solo juegas si tienes cartas seleccionadas y estás en fase de juego
+            if (selectedCardsCount > 0 && estadoPartida.faseActual == PHASE_PLAYING)
+            {
+                // ¡AQUÍ LLAMAMOS A LA LÓGICA! Suma los puntos y gasta 1 mano
+                JugarMano(manoJugada, cartasSeleccionadas);
+
+                // Borramos las cartas seleccionadas de la mano gráfica
+                RemoveCardsFromHand(globalHand);
+                selectedCardsCount = 0;
+            
+                // Robamos cartas nuevas de la baraja para rellenar
+                while(globalDeck.size() > 0 && globalHand.size() < handSize) {
+                    DrawTopCard(globalHand, globalDeck);
+                    Audio::PlaySFX(s_sfxCardSelect, 60);
+                }
+                
+                if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
+                cursor = 0;
+            }
+        }
+
+        // =======================================================
+        // 3. BOTÓN Y: DESCARTAR
+        // =======================================================
+        if (botonesPulsados & HidNpadButton_Y) 
+        {
+            // Solo descartas si tienes descartes disponibles y cartas seleccionadas
+            if (selectedCardsCount > 0 && estadoPartida.descartes > 0 && estadoPartida.faseActual == PHASE_PLAYING) 
+            {
+                DescartarCartas(); // Gasta 1 descarte en la lógica
+                
+                RemoveCardsFromHand(globalHand);
+                selectedCardsCount = 0;
+            
+                // Rellenar mano
+                while(globalDeck.size() > 0 && globalHand.size() < handSize) {
+                    DrawTopCard(globalHand, globalDeck);
+                    Audio::PlaySFX(s_sfxCardSelect, 60);
+                }
+                if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
+                cursor = 0;
+            }  
+        }
+
+        // =======================================================
+        // 4. BOTÓN MINUS (-): ORDENAR LA MANO
+        // =======================================================
+        if (botonesPulsados & HidNpadButton_Minus) {
+            typeOfSort = !typeOfSort;
+            if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}  
+        }
+
+        // Actualización gráfica general
+        UpdateHand(globalHand, cursor, delta_time);
+        if(typeOfSort){ orden = "POR PALOS";} else {orden = "POR VALOR";}
+        
         updateLogs();
 
 
@@ -378,7 +473,7 @@ void APP::Render()
 
     
 
-    DrawText(atlasss,std::to_string(ownedJokers.size()) +" / " + std::to_string(maxJokerHandSize)+ " JOKERS", projection, (screen_width/2.0f) + 320.0f, 130.0f, 1.5f, -5.0f);
+    DrawText(atlasss,std::to_string(ownedJokers.size()) +" / " + std::to_string(maxJokerHandSize)+ " JOKERS", projection, (screen_width/2.0f) + 500.0f, 130.0f, 1.5f, -5.0f);
     
     for (int i = 0; i < ownedJokers.size(); i++)
     {
@@ -397,6 +492,12 @@ void APP::Render()
 
     DrawText(atlasss, std::to_string(estadoPartida.manos), projection, 315.0f, 750.0f, 1.5f, -5.0f);
     DrawText(atlasss, std::to_string(estadoPartida.descartes), projection, 445.0f, 750.0f, 1.5f, -5.0f);
+
+    // Dibuja la puntuación total acumulada y el objetivo de la ciega
+    DrawText(atlasss, std::to_string((int)estadoPartida.puntuacionGlobal), projection, 360.0f, 410.0f, 1.5f, -5.0f);
+    DrawText(atlasss, "Anota al menos: ", projection, 320.0f, 150.0f, 1.5f, -5.0f);
+    DrawText(atlasss, std::to_string((int)estadoPartida.ciegaObjetivo), projection, 300.0f, 180.0f, 1.5f, -5.0f);
+
 
     //DrawText(atlasss, "PUNTUACION: 999", projection, 100.0f, 150.0f, 2.0f);
 
