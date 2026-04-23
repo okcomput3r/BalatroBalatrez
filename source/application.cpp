@@ -32,7 +32,7 @@
 #include <Graphics/textures.h>
 #include <Graphics/cards.h>
 #include <Graphics/image.h>
-//#include <Graphics/jokers.h>  
+#include <Graphics/jokers.h>  
 #include <Graphics/pause.h>
 
 #include <Utils/logs.h>
@@ -90,8 +90,7 @@ uint8_t selectedCardsCount = 0;
 
 uint8_t handSize = 8;
 
-uint8_t jokerHandSize = 5;
-uint8_t jokers_in_hand = 0;
+uint8_t maxJokerHandSize = 5;
 
 
 
@@ -354,6 +353,9 @@ void APP::Render()
     float screen_width = 1920.0f;
     float screen_height = 1080.0f;
 
+    float jokers_spacing = 125.0f;
+    float jokers_start_x = (screen_width / 2.0f) - (jokers_spacing * (ownedJokers.size() - 1.0f) / 2.0f);
+
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
@@ -367,16 +369,15 @@ void APP::Render()
     RenderHand(globalHand);
     RenderDeck(globalDeck);
 
-
-
-    DrawText(atlasss, std::to_string(jokers_in_hand) + " / " + std::to_string(jokerHandSize), projection, (screen_width/2.0f) + 320.0f, 130.0f, 1.5f, -5.0f);
     
-    for (int i = 0; i < jokerHandSize; i++)
+
+    DrawText(atlasss,std::to_string(ownedJokers.size()) +" / " + std::to_string(maxJokerHandSize)+ " JOKERS", projection, (screen_width/2.0f) + 320.0f, 130.0f, 1.5f, -5.0f);
+    
+    for (int i = 0; i < ownedJokers.size(); i++)
     {
-        DrawAtlasSprite(Jokers, i, projection,  (screen_width/2.0f) -125.0f*2.5f + 125.0f * i , 80.0f, 0.8f); 
+        int marcoJokers = ownedJokers[i].atlasIndex;
+        DrawAtlasSprite(Jokers, marcoJokers, projection,  jokers_start_x + jokers_spacing * i , 80.0f, 0.8f); 
     }
-
-
 
 
     DrawText(atlasss, "MANO SELECCIONADA:\n" + manoJugada, projection, 675.0f, 570.0f, 1.5f, -5.0f);
