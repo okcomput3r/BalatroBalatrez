@@ -1,29 +1,25 @@
-#include "logic.h"
+#include <logic.h>
 #include <Graphics/cards.h>
 #include <Graphics/jokers.h> 
 #include <Utils/logs.h>
 
-
-// Definimos la variable global
 EstadoPartida estadoPartida;
 
 void IniciarNuevaPartida() {
     estadoPartida.faseActual = PHASE_BLIND_SELECT;
-    estadoPartida.dinero = 0;
+    estadoPartida.dinero = 4;
     estadoPartida.puntuacionGlobal = 0;
-    estadoPartida.ronda = 0;
-    // La configuración de manos y descartes base se hace al elegir la ciega
+    estadoPartida.ronda = 1;
 }
 
 void ConfigurarCiega(float objetivo) {
     estadoPartida.ciegaObjetivo = objetivo;
     estadoPartida.puntuacionGlobal = 0;
     estadoPartida.manos = 4;      
-    estadoPartida.descartes = 4;   
+    estadoPartida.descartes = 3;   
     estadoPartida.faseActual = PHASE_PLAYING;
 }
 
-// Lógica simulada de valores 
 void ObtenerValoresBaseMano(std::string nombreMano, float &baseChips, float &baseMult) {
     if (nombreMano == "Escalera de Color") { baseChips = 100; baseMult = 8; }
     else if (nombreMano == "Poker") { baseChips = 60; baseMult = 7; }
@@ -36,19 +32,18 @@ void ObtenerValoresBaseMano(std::string nombreMano, float &baseChips, float &bas
     else { baseChips = 5; baseMult = 1; } // Carta Alta
 }
 
-void JugarMano(std::string nombreMano, const std::vector<unsigned int>& cartasSeleccionadas) {
-    if (estadoPartida.manos <= 0) return; // No te quedan manos
-    
-    estadoPartida.manos--;
-    estadoPartida.faseActual = PHASE_CALCULATING; // Bloquea los controles mientras calcula
+void CalcularPuntuacionPrevia(std::string nombreMano, const std::vector<unsigned int>& cartasSeleccionadas) {
+    if (cartasSeleccionadas.empty()) {
+        estadoPartida.fichas = 0;
+        estadoPartida.mult = 0;
+        return;
+    }
 
     float chips = 0;
     float mult = 0;
 
-    // 1. Valores base de la mano jugada
     ObtenerValoresBaseMano(nombreMano, chips, mult);
 
-    // 2. Sumar el valor de cada carta jugada a las Fichas
     for (unsigned int cardId : cartasSeleccionadas) {
         uint8_t result;
         Card &c = RetrieveCardReference(cardId, result);
@@ -68,7 +63,7 @@ void JugarMano(std::string nombreMano, const std::vector<unsigned int>& cartasSe
         }
     }
 
-    // 3. Aplicar Jokers (PASADA 1: Sumas de Chips y Mult)
+    // Aplicar Jokers (PASADA 1: Sumas de Chips y Mult)
     for (size_t i = 0; i < ownedJokers.size(); i++) {
         Joker& joker = ownedJokers[i];
 
@@ -101,7 +96,7 @@ void JugarMano(std::string nombreMano, const std::vector<unsigned int>& cartasSe
         }
     }
 
-    // 3.5 Aplicar Jokers (PASADA 2: Multiplicaciones de Mult)
+    // Aplicar Jokers (PASADA 2: Multiplicaciones de Mult)
     // Se hace en un bucle separado porque XMult siempre se aplica después de sumar todo
     for (size_t i = 0; i < ownedJokers.size(); i++) {
         Joker& joker = ownedJokers[i];
@@ -110,11 +105,21 @@ void JugarMano(std::string nombreMano, const std::vector<unsigned int>& cartasSe
         }
     }
 
-    // 4. Actualizar estado y sumar a la puntuación total
+    // Actualizar para que se muestre en la interfaz
     estadoPartida.fichas = chips;
     estadoPartida.mult = mult;
+}
+
+void JugarMano(std::string nombreMano, const std::vector<unsigned int>& cartasSeleccionadas) {
+    if (estadoPartida.manos <= 0) return; // No te quedan manos
     
-    float puntuacionMano = chips * mult;
+    estadoPartida.manos--;
+    estadoPartida.faseActual = PHASE_CALCULATING; // Bloquea los controles mientras calcula
+
+    CalcularPuntuacionPrevia(nombreMano, cartasSeleccionadas);
+    
+    // Multiplicamos Fichas x Mult y lo sumamos al total
+    float puntuacionMano = estadoPartida.fichas * estadoPartida.mult;
     estadoPartida.puntuacionGlobal += puntuacionMano;
 
     TRACE("Mano jugada: %s | Puntos obtenidos: %f | Total: %f / %f", 
@@ -123,13 +128,11 @@ void JugarMano(std::string nombreMano, const std::vector<unsigned int>& cartasSe
     // Comprobar si hemos ganado o perdido
     if (estadoPartida.puntuacionGlobal >= estadoPartida.ciegaObjetivo) {
         TRACE("¡CIEGA SUPERADA!");
-        // Aquí darías el dinero y pasarías a la tienda
         estadoPartida.faseActual = PHASE_SHOP;
     } else if (estadoPartida.manos == 0) {
         TRACE("GAME OVER");
         estadoPartida.faseActual = PHASE_GAME_OVER;
     } else {
-        // Volver a dar el control al jugador
         estadoPartida.faseActual = PHASE_PLAYING;
     }
 }
@@ -137,6 +140,12 @@ void JugarMano(std::string nombreMano, const std::vector<unsigned int>& cartasSe
 void DescartarCartas() {
     if (estadoPartida.descartes > 0) {
         estadoPartida.descartes--;
-        // La lógica de quitar las cartas de la mano real ocurrirá en application.cpp
     }
+}
+
+void AvanzarSiguienteCiega() {
+    estadoPartida.ronda++;
+    float nuevoObjetivo = estadoPartida.ciegaObjetivo * 1.5f; 
+    estadoPartida.dinero += 5; 
+    ConfigurarCiega(nuevoObjetivo);
 }

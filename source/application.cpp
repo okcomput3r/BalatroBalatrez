@@ -218,10 +218,9 @@ int APP::SetupScene()
 
     TRACE("SCENE SETTED AND MUSIC STARTED");
 
-    // --- ¡NUEVO! INICIAMOS LA LÓGICA DE LA PARTIDA ---
     IniciarNuevaPartida();
-    ConfigurarCiega(300.0f); // Puntuación objetivo de prueba (300 puntos)
-    // ------------------------------------------------
+    ConfigurarCiega(300.0f); 
+    
 
     return 0;
 }
@@ -259,174 +258,148 @@ void APP::Update()
     
 
     if (pausa){
-        // Mover el cursor a la Izquierda
-        if (botonesPulsados & HidNpadButton_Left) {
-            if (cursor > 0) {
-                cursor--; // Nos movemos una carta a la izquierda
-            }
-        }
 
-        // Mover el cursor a la Derecha
-        if (botonesPulsados & HidNpadButton_Right) {
-            // Asegurarnos de no salirnos de la mano
-            if ((size_t) cursor < globalHand.size() - 1) { 
-                cursor++; 
-            }
-            
-        }
+        if (estadoPartida.faseActual == PHASE_PLAYING){
 
-        
-        // Seleccionar/Deseleccionar con la 'A'
-        if (botonesPulsados & HidNpadButton_A) {
-            // añadimos o substraemos la carta seleccionada al contador dependiendo si es true o false el valor selected
-            uint8_t result;
-            Card &cardRef = RetrieveCardReference(globalHand[cursor], result);
-
-            if( (selectedCardsCount >= 0 && cardRef.selected) || (selectedCardsCount < maxSelectedCards && !cardRef.selected) )
-                {
-
-                if(!cardRef.selected) 
-                {
-                    TRACE("Selecting Card with ID %d", cardRef.ID);
-
-                    selectedCardsCount++;
-
-                    Audio::PlaySFX(s_sfxCardSelect, 60);
-                }else{
-                    TRACE("Unselecting Card with ID %d", cardRef.ID);
-
-                    selectedCardsCount--;
-
-                    Audio::PlaySFX(s_sfxCardUnselect, 60);
+            if (botonesPulsados & HidNpadButton_Left) {
+                if (cursor > 0) {
+                    cursor--; 
                 }
-                cardRef.selected = !cardRef.selected;
-            
             }
 
-            
-        }
-
-        /* 
-        //borra las cartas seleccionadas
-        if (botonesPulsados & HidNpadButton_X)
-        {
-            if(selectedCardsCount != 0)
-            {
-                RemoveCardsFromHand(globalHand);
-                selectedCardsCount = 0;
+            if (botonesPulsados & HidNpadButton_Right) {
+                
+                if ((size_t) cursor < globalHand.size() - 1) { 
+                    cursor++; 
+                }
+                
             }
+
+            // =======================================================
+            // BOTÓN A: SELECCIONAR Y DESELECCIONAR CARTAS
+            // =======================================================
+
+            if (botonesPulsados & HidNpadButton_A) {
+                uint8_t result;
+                Card &cardRef = RetrieveCardReference(globalHand[cursor], result);
+
+                if( (selectedCardsCount >= 0 && cardRef.selected) || (selectedCardsCount < maxSelectedCards && !cardRef.selected) )
+                    {
+
+                    if(!cardRef.selected) 
+                    {
+                        TRACE("Selecting Card with ID %d", cardRef.ID);
+
+                        selectedCardsCount++;
+
+                        Audio::PlaySFX(s_sfxCardSelect, 60);
+                    }else{
+                        TRACE("Unselecting Card with ID %d", cardRef.ID);
+
+                        selectedCardsCount--;
+
+                        Audio::PlaySFX(s_sfxCardUnselect, 60);
+                    }
+                    cardRef.selected = !cardRef.selected;
+                
+                }
+
+                
+            }
+
+            manoJugada = EvaluateSelectedHand(globalHand);
             
-            // si el tamaño de la baraja es menor que el tamaño real de la baraja
-            if(globalDeck.size() > 0 && globalHand.size() < handSize)
+            std::vector<unsigned int> cartasSeleccionadas;
+            for (size_t i = 0; i < globalHand.size(); i++) {
+                uint8_t result;
+                Card &cardRef = RetrieveCardReference(globalHand[i], result);
+                if (result && cardRef.selected) {
+                    cartasSeleccionadas.push_back(globalHand[i]); 
+                }
+            }
+
+            CalcularPuntuacionPrevia(manoJugada, cartasSeleccionadas);
+            
+            // =======================================================
+            // BOTÓN X: JUGAR LA MANO
+            // =======================================================
+            if (botonesPulsados & HidNpadButton_X)
             {
-                while(globalHand.size() < handSize )
+                if (selectedCardsCount > 0)
                 {
-                    TRACE("MOVING CARD FROM HAND TO DECK. DECK SIZE: %ld", globalDeck.size());
-                    if(globalDeck.size() == 0) {break;}
-                    //AddCardToHand(globalDeck[globalDeck.size()-1], globalHand, globalDeck);
-                    DrawTopCard(globalHand, globalDeck);
+                
+                    JugarMano(manoJugada, cartasSeleccionadas);
+
+                    
+                    RemoveCardsFromHand(globalHand);
+                    selectedCardsCount = 0;
+                
+                    
+                    while(globalDeck.size() > 0 && globalHand.size() < handSize) {
+                        DrawTopCard(globalHand, globalDeck);
+                        Audio::PlaySFX(s_sfxCardSelect, 60);
+                    }
+                    
                     if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
-                    Audio::PlaySFX(s_sfxCardSelect, 60);
+                    cursor = 0;
                 }
             }
 
-            cursor = 0;
-
-        }
-
-
-        if (botonesPulsados & HidNpadButton_Y) {
-            typeOfSort = !typeOfSort;
-            if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}  
-        }
-
-        UpdateHand(globalHand, cursor, delta_time);
-
-        if(typeOfSort){ orden = "POR PALOS";} else {orden = "POR VALOR";}
-
-        manoJugada= EvaluateSelectedHand(globalHand);
-
-        std::vector<unsigned int> cartasSeleccionadas;
-        for (size_t i = 0; i < globalHand.size(); i++) {
-            uint8_t result;
-            Card &cardRef = RetrieveCardReference(globalHand[i], result);
-            if (result && cardRef.selected) {
-                cartasSeleccionadas.push_back(globalHand[i]); // Guardas el ID
-            }
-        }
-
-        updateLogs();
-
-        */
-       // =======================================================
-        // 1. EVALUAR LA MANO ACTUAL (Antes de pulsar ningún botón)
-        // =======================================================
-        manoJugada = EvaluateSelectedHand(globalHand);
-        
-        std::vector<unsigned int> cartasSeleccionadas;
-        for (size_t i = 0; i < globalHand.size(); i++) {
-            uint8_t result;
-            Card &cardRef = RetrieveCardReference(globalHand[i], result);
-            if (result && cardRef.selected) {
-                cartasSeleccionadas.push_back(globalHand[i]); 
-            }
-        }
-
-        // =======================================================
-        // 2. BOTÓN X: JUGAR LA MANO
-        // =======================================================
-        if (botonesPulsados & HidNpadButton_X)
-        {
-            // Solo juegas si tienes cartas seleccionadas y estás en fase de juego
-            if (selectedCardsCount > 0 && estadoPartida.faseActual == PHASE_PLAYING)
+            // =======================================================
+            // BOTÓN Y: DESCARTAR
+            // =======================================================
+            if (botonesPulsados & HidNpadButton_Y) 
             {
-                // ¡AQUÍ LLAMAMOS A LA LÓGICA! Suma los puntos y gasta 1 mano
-                JugarMano(manoJugada, cartasSeleccionadas);
-
-                // Borramos las cartas seleccionadas de la mano gráfica
-                RemoveCardsFromHand(globalHand);
-                selectedCardsCount = 0;
-            
-                // Robamos cartas nuevas de la baraja para rellenar
-                while(globalDeck.size() > 0 && globalHand.size() < handSize) {
-                    DrawTopCard(globalHand, globalDeck);
-                    Audio::PlaySFX(s_sfxCardSelect, 60);
-                }
                 
+                if (selectedCardsCount > 0 && estadoPartida.descartes > 0) 
+                {
+                    DescartarCartas(); 
+                    
+                    RemoveCardsFromHand(globalHand);
+                    selectedCardsCount = 0;
+                
+                    while(globalDeck.size() > 0 && globalHand.size() < handSize) {
+                        DrawTopCard(globalHand, globalDeck);
+                        Audio::PlaySFX(s_sfxCardSelect, 60);
+                    }
+                    if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
+                    cursor = 0;
+                }  
+            }
+
+            // =======================================================
+            // BOTÓN MINUS (-): ORDENAR LA MANO
+            // ======================================================
+            if (botonesPulsados & HidNpadButton_Minus) {
+                typeOfSort = !typeOfSort;
+                if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}  
+            }
+        }
+
+        else if (estadoPartida.faseActual == PHASE_SHOP) {
+
+            // =======================================================
+            // BOTÓN MÁS (+): PASAR A LA SIGUIENTE CIEGA
+            // ======================================================
+            if (botonesPulsados & HidNpadButton_Plus) {
+                AvanzarSiguienteCiega();
+                
+                for (size_t i = 0; i < globalHand.size(); i++) DestroyCard(globalHand[i]);
+                for (size_t i = 0; i < globalDeck.size(); i++) DestroyCard(globalDeck[i]);
+                
+                globalHand.clear();
+                globalDeck.clear();
+                selectedCardsCount = 0;
+
+                LoadDeck(globalDeck);
+
+                for (int i = 0; i < handSize; i++) {
+                    DrawTopCard(globalHand, globalDeck);
+                }
+
                 if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
                 cursor = 0;
             }
-        }
-
-        // =======================================================
-        // 3. BOTÓN Y: DESCARTAR
-        // =======================================================
-        if (botonesPulsados & HidNpadButton_Y) 
-        {
-            // Solo descartas si tienes descartes disponibles y cartas seleccionadas
-            if (selectedCardsCount > 0 && estadoPartida.descartes > 0 && estadoPartida.faseActual == PHASE_PLAYING) 
-            {
-                DescartarCartas(); // Gasta 1 descarte en la lógica
-                
-                RemoveCardsFromHand(globalHand);
-                selectedCardsCount = 0;
-            
-                // Rellenar mano
-                while(globalDeck.size() > 0 && globalHand.size() < handSize) {
-                    DrawTopCard(globalHand, globalDeck);
-                    Audio::PlaySFX(s_sfxCardSelect, 60);
-                }
-                if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
-                cursor = 0;
-            }  
-        }
-
-        // =======================================================
-        // 4. BOTÓN MINUS (-): ORDENAR LA MANO
-        // =======================================================
-        if (botonesPulsados & HidNpadButton_Minus) {
-            typeOfSort = !typeOfSort;
-            if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}  
         }
 
         // Actualización gráfica general
@@ -435,11 +408,7 @@ void APP::Update()
         
         updateLogs();
 
-
     }
-
-    
-    
 }
 
 
@@ -494,30 +463,25 @@ void APP::Render()
     DrawText(atlasss, std::to_string(estadoPartida.descartes), projection, 445.0f, 750.0f, 1.5f, -5.0f);
 
     // Dibuja la puntuación total acumulada y el objetivo de la ciega
-    DrawText(atlasss, std::to_string((int)estadoPartida.puntuacionGlobal), projection, 360.0f, 410.0f, 1.5f, -5.0f);
+    DrawText(atlasss, std::to_string((int)estadoPartida.puntuacionGlobal), projection, 360.0f, 415.0f, 1.5f, -5.0f);
     DrawText(atlasss, "Anota al menos: ", projection, 320.0f, 150.0f, 1.5f, -5.0f);
     DrawText(atlasss, std::to_string((int)estadoPartida.ciegaObjetivo), projection, 300.0f, 180.0f, 1.5f, -5.0f);
 
-
-    //DrawText(atlasss, "PUNTUACION: 999", projection, 100.0f, 150.0f, 2.0f);
-
-    //DrawText(atlasss, "LINEA UNO\nLINEA DOS", projection, 500.0f, 100.0f, 1.0f, -5.0f);
-
     DrawText(atlasss,"$" + std::to_string(estadoPartida.dinero), projection, 380.0f, 850.0f, 1.5f, -5.0f);
+    DrawText(atlasss, std::to_string(estadoPartida.ronda), projection, 445.0f, 970.0f, 1.5f, -5.0f);
 
 
     DrawText(atlasss, "ORDEN:\n" + orden, projection, 825.0f, 950.0f, 1.5f, -5.0f);
 
-
-
-
+    // Dibuja el menú de la tienda si has ganado
+    if (estadoPartida.faseActual == PHASE_SHOP) {
+        DrawText(atlasss, "¡CIEGA SUPERADA!", projection, 900.0f, 300.0f, 3.0f, -5.0f);
+        DrawText(atlasss, "BIENVENIDO A LA TIENDA", projection, 900.0f, 400.0f, 2.0f, -5.0f);
+        DrawText(atlasss, "PULSA + PARA LA SIGUIENTE CIEGA", projection, 900.0f, 600.0f, 1.5f, -5.0f);
+    }
 
     RenderPauseMenu(menuPausa, projection, model, imagee);
 
-
-    
-
-    
 
     SDL_GL_SwapWindow(window);
     //TRACE("END OF RENDER at time %d", SDL_GetTicks());

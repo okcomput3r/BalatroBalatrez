@@ -11,7 +11,7 @@ enum GamePhase {
     PHASE_GAME_OVER     // Has perdido
 };
 
-// Esta es la estructura que tú llamaste "estadoo"
+// Estructura para mantener el estado de la partida
 struct EstadoPartida {
     GamePhase faseActual;
 
@@ -26,7 +26,7 @@ struct EstadoPartida {
     int manos = 0;
     int descartes = 0;
 
-    int ronda = 0;
+    int ronda = 1;
 };
 
 // Declaración de tu variable global
@@ -35,5 +35,7 @@ extern EstadoPartida estadoPartida;
 // Funciones principales de la lógica
 void IniciarNuevaPartida();
 void ConfigurarCiega(float objetivo);
+void CalcularPuntuacionPrevia(std::string nombreMano, const std::vector<unsigned int>& cartasSeleccionadas);
 void JugarMano(std::string nombreMano, const std::vector<unsigned int>& cartasSeleccionadas);
 void DescartarCartas();
+void AvanzarSiguienteCiega();
