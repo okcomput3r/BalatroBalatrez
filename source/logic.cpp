@@ -10,6 +10,7 @@ void IniciarNuevaPartida() {
     estadoPartida.dinero = 4;
     estadoPartida.puntuacionGlobal = 0;
     estadoPartida.ronda = 1;
+    ownedJokers.clear();
 }
 
 void ConfigurarCiega(float objetivo) {
@@ -44,64 +45,77 @@ void CalcularPuntuacionPrevia(std::string nombreMano, const std::vector<unsigned
 
     ObtenerValoresBaseMano(nombreMano, chips, mult);
 
+    // =========================================================
+    // PASADA 1: Valor numérico y Jokers que afectan CARTA a CARTA
+    // =========================================================
     for (unsigned int cardId : cartasSeleccionadas) {
         uint8_t result;
         Card &c = RetrieveCardReference(cardId, result);
         
         if (result) {
-            int valorCarta = 0;
-            
-            if (c.level >= 2 && c.level <= 9) {
+            float valorCarta = 0;
+            if (c.level >= 2 && c.level <= 12) {
                 valorCarta = c.level;
-            } else if (c.level >= 10 && c.level <= 12) {
-                valorCarta = 10; // Sota, Caballo y Rey valen 10
-            } else if (c.level == 1) { // Depende de cómo definas el As
-                valorCarta = 11; // El As vale 11
+            } else if (c.level == 1) { 
+                valorCarta = 13; // El As vale 13
             }
-
             chips += valorCarta;
+
+            // Comprobamos Jokers para ESTA carta en concreto
+            for (Joker& joker : ownedJokers) {
+                bool seActivaCarta = false;
+
+                if (joker.trigger == TRIGGER_ON_SUIT && c.house == joker.conditionInt) {
+                    seActivaCarta = true;
+                } 
+                else if (joker.trigger == TRIGGER_ON_FACE_CARD && c.level >= 10 && c.level <= 12) {
+                    seActivaCarta = true;
+                }
+
+                if (seActivaCarta) {
+                    if (joker.action == ACTION_ADD_MULT) mult += joker.effectValue;
+                    else if (joker.action == ACTION_ADD_CHIPS) chips += joker.effectValue;
+                }
+            }
         }
     }
 
-    // Aplicar Jokers (PASADA 1: Sumas de Chips y Mult)
-    for (size_t i = 0; i < ownedJokers.size(); i++) {
-        Joker& joker = ownedJokers[i];
+    // =========================================================
+    // PASADA 2: Jokers que se activan POR LA MANO o GLOBALES
+    // =========================================================
+    for (Joker& joker : ownedJokers) {
+        if (joker.action == ACTION_ECONOMY) continue;
 
-        switch (joker.effectType) {
-            case EFFECT_ADD_MULT:
-                mult += joker.effectValue;
-                break;
-                
-            case EFFECT_ADD_CHIPS:
-                chips += joker.effectValue;
-                break;
+        bool seActivaGlobal = false;
+        float multiplicadorDinamico = 1.0f; 
 
-            case EFFECT_ADD_MULT_PAREJA:
-                if (nombreMano.find("Pareja") != std::string::npos || nombreMano == "Full House") {
-                    mult += joker.effectValue;
-                }
-                break;
-
-            case EFFECT_ADD_MULT_OROS:
-                for (unsigned int cardId : cartasSeleccionadas) {
-                    uint8_t result;
-                    Card &c = RetrieveCardReference(cardId, result);
-                    if (result && c.house == OROS) { 
-                        mult += joker.effectValue;
-                    }
-                }
-                break;
-
-            // (Aquí puedes ir añadiendo los demás casos: EFFECT_ADD_CHIPS_PAREJA, EFFECT_ADD_MULT_ESPADAS, etc.)
+        if (joker.trigger == TRIGGER_ALWAYS) {
+            seActivaGlobal = true;
+        } 
+        else if (joker.trigger == TRIGGER_ON_HAND) {
+            if (nombreMano.find(joker.conditionString) != std::string::npos ||
+               (nombreMano == "Full House" && joker.conditionString == "Pareja") ||
+               (nombreMano == "Full House" && joker.conditionString == "Trio")) {
+                seActivaGlobal = true;
+            }
         }
-    }
+        else if (joker.trigger == TRIGGER_MAX_CARDS) {
+            if (cartasSeleccionadas.size() <= (size_t)joker.conditionInt) seActivaGlobal = true;
+        }
+        else if (joker.trigger == TRIGGER_PER_DISCARD) {
+            seActivaGlobal = true;
+            multiplicadorDinamico = (float)estadoPartida.descartes;
+        }
+        else if (joker.trigger == TRIGGER_PER_JOKER) {
+            seActivaGlobal = true;
+            multiplicadorDinamico = (float)ownedJokers.size();
+        }
 
-    // Aplicar Jokers (PASADA 2: Multiplicaciones de Mult)
-    // Se hace en un bucle separado porque XMult siempre se aplica después de sumar todo
-    for (size_t i = 0; i < ownedJokers.size(); i++) {
-        Joker& joker = ownedJokers[i];
-        if (joker.effectType == EFFECT_MULT_MULT) {
-            mult *= joker.effectValue;
+        if (seActivaGlobal) {
+            float valorReal = joker.effectValue * multiplicadorDinamico;
+            
+            if (joker.action == ACTION_ADD_MULT) mult += valorReal;
+            else if (joker.action == ACTION_ADD_CHIPS) chips += valorReal;
         }
     }
 
@@ -147,5 +161,11 @@ void AvanzarSiguienteCiega() {
     estadoPartida.ronda++;
     float nuevoObjetivo = estadoPartida.ciegaObjetivo * 1.5f; 
     estadoPartida.dinero += 5; 
+    for (Joker& joker : ownedJokers) {
+        if (joker.action == ACTION_ECONOMY && joker.trigger == TRIGGER_END_ROUND) {
+            estadoPartida.dinero += (int)joker.effectValue;
+            TRACE("El Joker %s te ha dado %d monedas extra.", joker.name.c_str(), (int)joker.effectValue);
+        }
+    }
     ConfigurarCiega(nuevoObjetivo);
 }

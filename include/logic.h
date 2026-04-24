@@ -16,20 +16,19 @@ struct EstadoPartida {
     GamePhase faseActual;
 
     // Estadísticas de la ronda actual
-    float ciegaObjetivo = 0.0f;
-    float puntuacionGlobal = 0.0f;
-    float fichas = 0.0f;
-    float mult = 0.0f;
+    float ciegaObjetivo;
+    float puntuacionGlobal;
+    float fichas;
+    float mult;
 
     // Recursos del jugador
-    int dinero = 0;
-    int manos = 0;
-    int descartes = 0;
+    int dinero;
+    int manos;
+    int descartes;
 
-    int ronda = 1;
+    int ronda;
 };
 
-// Declaración de tu variable global
 extern EstadoPartida estadoPartida;
 
 // Funciones principales de la lógica
