@@ -254,7 +254,7 @@ void APP::Update()
     }
 
 
-    UpdatePauseMenu(menuPausa, botonesPulsados, delta_time);
+    
     
 
     if (pausa){
@@ -409,6 +409,7 @@ void APP::Update()
         updateLogs();
 
     }
+    UpdatePauseMenu(menuPausa, botonesPulsados, delta_time, pausa);
 }
 
 

@@ -1,18 +1,14 @@
 #include <Graphics/pause.h>
 #include <cmath>
+#include <SDL.h>
+#include <stdlib.h>
+#include <Utils/math.h>
 
-// Definimos unos IDs ficticios para el ejemplo
-#define SPRITE_PAUSE_BG 50
-#define SPRITE_BTN_RESUME 51
-#define SPRITE_BTN_QUIT 52
 
-// Función de Lerp (puedes importarla de tu Utils si la tienes ahí)
-static float LerpSimple(float start, float end, float t) {
-    return start + (end - start) * t;
-}
+
 
 void InitPauseMenu(PauseMenuState& pauseState) {
-    // 1. Cargamos el atlas de la interfaz de pausa
+    // Cargamos el atlas de los botones de pausa y las imágenes de fondo
     InitializeImage(pauseState.background, 1920.0f /2.0f, 1080.0f / 2, "fondoPausa.png");
     InitializeImage(pauseState.difuminado, 1920.0f /2.0f, 1080.0f / 2, "difuminadoNegro.png");
 
@@ -65,7 +61,7 @@ void InitPauseMenu(PauseMenuState& pauseState) {
     pauseState.targetMenuY = 1500.0f;
 }
 
-void UpdatePauseMenu(PauseMenuState& pauseState, u64 botonesPulsados, float delta_time) {
+void UpdatePauseMenu(PauseMenuState& pauseState, u64 botonesPulsados, float delta_time, bool& pausa) {
 
     if (std::abs(pauseState.targetMenuY - pauseState.menuY) > 0.5f) {
         pauseState.menuY = LerpSimple(pauseState.menuY, pauseState.targetMenuY, delta_time * 15.0f);
@@ -73,8 +69,7 @@ void UpdatePauseMenu(PauseMenuState& pauseState, u64 botonesPulsados, float delt
         pauseState.menuY = pauseState.targetMenuY;
     }
 
-    // 2. BLOQUEO DE INPUTS
-    // Si el menú está bajado (o bajando), no hacemos caso a la cruceta
+
     if (pauseState.targetMenuY > 0.0f) {
         return; 
     }
@@ -95,12 +90,14 @@ void UpdatePauseMenu(PauseMenuState& pauseState, u64 botonesPulsados, float delt
     for (size_t i = 0; i < pauseState.buttons.size(); i++) {
         PauseButton& btn = pauseState.buttons[i];
 
-        // Efecto Hover: Si es el botón seleccionado, el targetX se mueve 40 píxeles a la derecha
+        // Si es el botón seleccionado, el targetX se mueve 20 píxeles a la derecha
         if (i == pauseState.selectedIndex) {
             btn.targetX = btn.baseX + 20.0f;
+            pauseState.arraySeleccionados[i] = true;
         } else {
             // Si no, vuelve a su posición original
             btn.targetX = btn.baseX;
+            pauseState.arraySeleccionados[i] = false;
         }
 
         // Ejecutamos el Lerp para que el movimiento sea suave
@@ -109,20 +106,41 @@ void UpdatePauseMenu(PauseMenuState& pauseState, u64 botonesPulsados, float delt
         } else {
             btn.posX = btn.targetX;
         }
+
     }
+
+    if (botonesPulsados & HidNpadButton_A) {
+        
+        switch (pauseState.selectedIndex) {
+            case 0:
+                pausa = !pausa;
+                pauseState.targetMenuY = 1500.0f; 
+
+                botonesPulsados &= ~HidNpadButton_A;
+                break;
+
+            case 1: 
+                break;
+
+            case 2: 
+                break;
+
+            case 3: 
+                SDL_Quit();
+                exit(0);
+                break;
+        }
+    }
+
+    
 }
 
 void RenderPauseMenu(const PauseMenuState& pauseState, const glm::mat4& projection, glm::mat4 model, ImageData img) {
-    // 1. Dibujar fondo (quizás ocupe toda la pantalla y oscurezca el juego)
-    //DrawAtlasSprite(pauseState.uiAtlas, SPRITE_PAUSE_BG, projection, 0.0f, 0.0f);
     if (pauseState.menuY >= 1000.0f) return;
 
-    // Dibujar fondo sumándole el menuY
-    //DrawAtlasSprite(pauseState.uiAtlas, SPRITE_PAUSE_BG, projection, 0.0f, pauseState.menuY);
     DibujarImagen(pauseState.difuminado, projection, model, 1920.0f /2.0f, 1080.0f / 2);
     DibujarImagen(pauseState.background, projection, model, pauseState.background.posX, pauseState.background.posY + pauseState.menuY);
 
-    // Dibujar los botones sumándoles también el menuY
     for (const PauseButton& btn : pauseState.buttons) {
         DrawAtlasSprite(pauseState.uiAtlas, btn.spriteID, projection, btn.posX, btn.posY + pauseState.menuY);
     }
@@ -130,10 +148,15 @@ void RenderPauseMenu(const PauseMenuState& pauseState, const glm::mat4& projecti
 }
 
 
-// void RenderPauseMenuDescriptions(const PauseMenuState& pauseState, const glm::mat4& projection, glm::mat4 model, bool Seleccionado) {
-//     if (!Seleccionado) return;
+void RenderPauseMenuDescriptions(const PauseMenuState& pauseState, const glm::mat4& projection, glm::mat4 model, bool Seleccionado[], int size, bool dibujar) {
+    //if (!Seleccionado) return;
+    if(dibujar){return;}
 
-//     DibujarImagen()
+    for (int i = 0; i < size; i++){
+        if (Seleccionado[i]){
+            DibujarImagen(pauseState.background, projection, model, 400.0f + 70.0f * i, 790.0f);
+    }
+}
 
 
-// }
+}

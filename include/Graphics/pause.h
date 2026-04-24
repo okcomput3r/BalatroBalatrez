@@ -3,6 +3,7 @@
 #include <Graphics/image.h>
 #include <switch.h>
 #include <vector>
+#include <Utils/math.h>
 
 // Estructura ligera solo para las matemáticas del botón
 struct PauseButton {
@@ -17,6 +18,7 @@ struct PauseMenuState {
     ImageData uiAtlas; // Aquí cargamos el fondo y los botones
     ImageData background;
     ImageData difuminado;
+    bool arraySeleccionados[4] = {false, false, false, false};
     std::vector<PauseButton> buttons;
     int selectedIndex = 0;
 
@@ -26,6 +28,7 @@ struct PauseMenuState {
 
 // Funciones principales
 void InitPauseMenu(PauseMenuState& pauseState);
-void UpdatePauseMenu(PauseMenuState& pauseState, u64 botonesPulsados, float delta_time);
+void UpdatePauseMenu(PauseMenuState& pauseState, u64 botonesPulsados, float delta_time, bool& pausa);
 void RenderPauseMenu(const PauseMenuState& pauseState, const glm::mat4& projection, glm::mat4 model, ImageData img);
-//void RenderPauseMenuDescriptions(const PauseMenuState& pauseState, const glm::mat4& projection, glm::mat4 model, bool Seleccionado);
+
+void RenderPauseMenuDescriptions(const PauseMenuState& pauseState, const glm::mat4& projection, glm::mat4 model, bool Seleccionado[], int size, bool dibujar);
