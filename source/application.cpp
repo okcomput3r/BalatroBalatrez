@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <vector>
 #include <queue>
+#include <iostream>
+#include <random>
 
 
 
@@ -100,6 +102,14 @@ uint8_t handSize = 8;
 
 uint8_t maxJokerHandSize = 5;
 
+std::random_device rd;  // semilla
+std::mt19937 gen(rd()); // generador
+std::uniform_int_distribution<> dist(0, 19);
+
+int random1 = dist(gen);
+int random2 = dist(gen);
+int random3 = dist(gen);
+
 
 
 
@@ -182,7 +192,7 @@ int APP::SetupScene()
     InitializeAtlas(Jokers, 10, 16, 142.0f, 190.0f);
 
     InitPauseMenu(menuPausa);
-    InitStoreMenu(menuStore);
+    InitStoreMenu(menuStore, random1, random2, random3);
 
 
 
@@ -194,6 +204,8 @@ int APP::SetupScene()
     LoadBaseCardTextures();
 
     LoadDeck(globalDeck);
+
+    
 
 
     for (int i = 1; i <= handSize; i++ )
@@ -279,12 +291,13 @@ void APP::Update()
             }
 
             // =======================================================
-            // BOTÓN A: SELECCIONAR Y DESELECCIONAR CARTAS
+            // BOTÓN A: SELECCIONAR Y DESELECCIONAR CARTAS // ES LA TECLA C
             // =======================================================
 
             if (botonesPulsados & HidNpadButton_A) {
                 uint8_t result;
                 Card &cardRef = RetrieveCardReference(globalHand[cursor], result);
+                
 
                 if( (selectedCardsCount >= 0 && cardRef.selected) || (selectedCardsCount < maxSelectedCards && !cardRef.selected) )
                     {
@@ -324,7 +337,7 @@ void APP::Update()
             CalcularPuntuacionPrevia(manoJugada, cartasSeleccionadas);
             
             // =======================================================
-            // BOTÓN X: JUGAR LA MANO
+            // BOTÓN X: JUGAR LA MANO // ES LA TECLA V
             // =======================================================
             if (botonesPulsados & HidNpadButton_X)
             {
@@ -349,7 +362,7 @@ void APP::Update()
             }
 
             // =======================================================
-            // BOTÓN Y: DESCARTAR
+            // BOTÓN Y: DESCARTAR // ES LA TECLA Z
             // =======================================================
             if (botonesPulsados & HidNpadButton_Y) 
             {
@@ -371,12 +384,16 @@ void APP::Update()
             }
 
             // =======================================================
-            // BOTÓN MINUS (-): ORDENAR LA MANO
+            // BOTÓN MINUS (-): ORDENAR LA MANO // ES LA TECLA N
             // ======================================================
             if (botonesPulsados & HidNpadButton_Minus) {
                 typeOfSort = !typeOfSort;
                 if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}  
             }
+
+            random1 = dist(gen);
+            random2 = dist(gen);
+            random3 = dist(gen);
         }
 
         else if (estadoPartida.faseActual == PHASE_SHOP) {
@@ -385,6 +402,8 @@ void APP::Update()
             if (menuStore.targetMenuY == 1500.0f) {
                 menuStore.targetMenuY = 0.0f;
                 shop = !shop;
+                estadoPartida.dinero += 5;
+                
             }
 
             // =======================================================
@@ -394,7 +413,9 @@ void APP::Update()
                 if (menuStore.targetMenuY == 0.0f) {
                     menuStore.targetMenuY = 1500.0f;
                     shop = !shop;
+                    
                 }
+                InitJokersStore(menuStore, random1, random2, random3);
 
                 AvanzarSiguienteCiega();
                 
@@ -451,7 +472,7 @@ void APP::Update()
 
     }
     UpdatePauseMenu(menuPausa, botonesPulsados, delta_time, pausa);
-    UpdateStoreMenu(menuStore, botonesPulsados, delta_time, pausa);
+    UpdateStoreMenu(menuStore, botonesPulsados, delta_time, pausa, random1, random2, random3);
 }
 
 
@@ -486,6 +507,8 @@ void APP::Render()
     
 
     DrawText(atlasss,std::to_string(ownedJokers.size()) +" / " + std::to_string(maxJokerHandSize)+ " JOKERS", projection, (screen_width/2.0f) + 550.0f, 130.0f, 1.5f, -5.0f);
+
+    
     
     for (int i = 0; i < ownedJokers.size(); i++)
     {
@@ -530,11 +553,13 @@ void APP::Render()
         DrawText(atlasss, "PULSA + PARA REINICIAR", projection, 900.0f, 600.0f, 1.5f, -5.0f);
     }
 
-    RenderPauseMenu(menuPausa, projection, model, imagee);
+    
 
     
     RenderStoreMenu(menuStore, projection, model, imagee);
     RenderStoreMenuDescriptions(menuStore, projection, model, menuStore.arraySeleccionados, 3, !shop);
+
+    RenderPauseMenu(menuPausa, projection, model, imagee);
    
     
 

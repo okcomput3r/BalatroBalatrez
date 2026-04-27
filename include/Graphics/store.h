@@ -1,9 +1,15 @@
 #pragma once
 
+#include <GLES3/gl3.h>
+#include <glad/glad.h>
 #include <Graphics/image.h>
 #include <switch.h>
 #include <vector>
 #include <Utils/math.h>
+#include <Graphics/jokers.h>
+
+
+#include <string>
 
 
 struct JokerCard {
@@ -27,8 +33,10 @@ struct StoreMenuState {
 };
 
 // Funciones principales
-void InitStoreMenu(StoreMenuState& storeState);
-void UpdateStoreMenu(StoreMenuState& storeState, u64 botonesPulsados, float delta_time, bool& pausa);
+void InitJokersStore(StoreMenuState& storeState, int random1, int random2, int random3);
+void InitStoreMenu(StoreMenuState& storeState, int random1, int random2, int random3);
+void UpdateStoreMenu(StoreMenuState& storeState, u64 botonesPulsados, float delta_time, bool& pausa, int random1, int random2, int random3);
+
 void RenderStoreMenu(const StoreMenuState& storeState, const glm::mat4& projection, glm::mat4 model, ImageData img);
 
 void RenderStoreMenuDescriptions(const StoreMenuState& storeState, const glm::mat4& projection, glm::mat4 model, bool Seleccionado[], int size, bool dibujar);

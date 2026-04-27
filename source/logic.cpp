@@ -160,7 +160,7 @@ void DescartarCartas() {
 void AvanzarSiguienteCiega() {
     estadoPartida.ronda++;
     float nuevoObjetivo = estadoPartida.ciegaObjetivo * 1.5f; 
-    estadoPartida.dinero += 5; 
+    //estadoPartida.dinero += 5; 
     for (Joker& joker : ownedJokers) {
         if (joker.action == ACTION_ECONOMY && joker.trigger == TRIGGER_END_ROUND) {
             estadoPartida.dinero += (int)joker.effectValue;
