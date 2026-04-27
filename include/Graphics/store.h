@@ -5,17 +5,19 @@
 #include <vector>
 #include <Utils/math.h>
 
+
 struct JokerCard {
     int spriteID;
-    float baseX; // La posición X original de reposo
+    float baseY; // La posición X original de reposo
     float posX, posY;
     float targetX, targetY;
 };
 
 struct StoreMenuState {
-    ImageData uiAtlas;
+    ImageData atlasJokers;
+    ImageData descripcionJokers;
     ImageData background;
-    ImageData difuminado;
+    ImageData comprar;
     bool arraySeleccionados[3] = {false, false, false};
     std::vector<JokerCard> jokers;
     int selectedIndex = 0;

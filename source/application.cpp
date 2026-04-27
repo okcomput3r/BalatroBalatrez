@@ -34,6 +34,7 @@
 #include <Graphics/image.h>
 #include <Graphics/jokers.h>  
 #include <Graphics/pause.h>
+#include <Graphics/store.h>
 
 #include <Utils/logs.h>
 #include <Utils/math.h>
@@ -70,7 +71,7 @@ int cursor;
 bool pausa = true;
 
 int cursorInterfaz;
-bool seleccionableInterfaz = false;
+bool shop = false;
 
 std::string manoJugada = "";
 std::string orden = "POR PALOS";
@@ -85,6 +86,7 @@ ImageData barra;
 
 
 PauseMenuState menuPausa;
+StoreMenuState menuStore;
 //EstadoPartida estadoPartida;
 
 
@@ -180,6 +182,7 @@ int APP::SetupScene()
     InitializeAtlas(Jokers, 10, 16, 142.0f, 190.0f);
 
     InitPauseMenu(menuPausa);
+    InitStoreMenu(menuStore);
 
 
 
@@ -378,10 +381,21 @@ void APP::Update()
 
         else if (estadoPartida.faseActual == PHASE_SHOP) {
 
+            
+            if (menuStore.targetMenuY == 1500.0f) {
+                menuStore.targetMenuY = 0.0f;
+                shop = !shop;
+            }
+
             // =======================================================
             // BOTÓN MÁS (+): PASAR A LA SIGUIENTE CIEGA
             // ======================================================
             if (botonesPulsados & HidNpadButton_Plus) {
+                if (menuStore.targetMenuY == 0.0f) {
+                    menuStore.targetMenuY = 1500.0f;
+                    shop = !shop;
+                }
+
                 AvanzarSiguienteCiega();
                 
                 for (size_t i = 0; i < globalHand.size(); i++) DestroyCard(globalHand[i]);
@@ -410,6 +424,7 @@ void APP::Update()
 
     }
     UpdatePauseMenu(menuPausa, botonesPulsados, delta_time, pausa);
+    UpdateStoreMenu(menuStore, botonesPulsados, delta_time, pausa);
 }
 
 
@@ -476,12 +491,19 @@ void APP::Render()
 
     // Dibuja el menú de la tienda si has ganado
     if (estadoPartida.faseActual == PHASE_SHOP) {
-        DrawText(atlasss, "¡CIEGA SUPERADA!", projection, 900.0f, 300.0f, 3.0f, -5.0f);
-        DrawText(atlasss, "BIENVENIDO A LA TIENDA", projection, 900.0f, 400.0f, 2.0f, -5.0f);
-        DrawText(atlasss, "PULSA + PARA LA SIGUIENTE CIEGA", projection, 900.0f, 600.0f, 1.5f, -5.0f);
+        // DrawText(atlasss, "¡CIEGA SUPERADA!", projection, 900.0f, 300.0f, 3.0f, -5.0f);
+        // DrawText(atlasss, "BIENVENIDO A LA TIENDA", projection, 900.0f, 400.0f, 2.0f, -5.0f);
+        // DrawText(atlasss, "PULSA + PARA LA SIGUIENTE CIEGA", projection, 900.0f, 600.0f, 1.5f, -5.0f);
+        
     }
 
     RenderPauseMenu(menuPausa, projection, model, imagee);
+
+    
+    RenderStoreMenu(menuStore, projection, model, imagee);
+    RenderStoreMenuDescriptions(menuStore, projection, model, menuStore.arraySeleccionados, 3, !shop);
+   
+    
 
 
     SDL_GL_SwapWindow(window);

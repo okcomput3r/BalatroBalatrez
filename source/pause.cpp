@@ -64,7 +64,7 @@ void InitPauseMenu(PauseMenuState& pauseState) {
 void UpdatePauseMenu(PauseMenuState& pauseState, u64 botonesPulsados, float delta_time, bool& pausa) {
 
     if (std::abs(pauseState.targetMenuY - pauseState.menuY) > 0.5f) {
-        pauseState.menuY = LerpSimple(pauseState.menuY, pauseState.targetMenuY, delta_time * 15.0f);
+        pauseState.menuY = LerpSimple(pauseState.menuY, pauseState.targetMenuY, delta_time * 10.0f);
     } else {
         pauseState.menuY = pauseState.targetMenuY;
     }

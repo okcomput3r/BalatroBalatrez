@@ -9,40 +9,45 @@
 
 void InitStoreMenu(StoreMenuState& storeState) {
     // Cargamos el atlas de los botones de pausa y las imágenes de fondo
-    InitializeImage(storeState.background, 1920.0f /2.0f, 1080.0f / 2, "fondoPausa.png");
-    InitializeImage(storeState.difuminado, 1920.0f /2.0f, 1080.0f / 2, "difuminadoNegro.png");
+    InitializeImage(storeState.background, 1110.0f, 800.0f, "fondoTienda.png");
+    InitializeImage(storeState.comprar, 1920.0f /2.0f, 1080.0f / 2, "botonComprar.png");
+    InitializeImage(storeState.atlasJokers, 0.0f, 0.0f, "Jokers.png");
+    InitializeImage(storeState.descripcionJokers, 0.0f, 0.0f, "atlasDescripcionesCartas.png");
 
-    InitializeImage(storeState.uiAtlas, 0.0f, 0.0f, "botonesPausa.png");
-    InitializeAtlas(storeState.uiAtlas, 1, 4, 339.0f, 54.0f);
 
-    // 2. Definimos los recortes (Fondo y botones)
-    //DefineAtlasSprite(storeState.uiAtlas, SPRITE_PAUSE_BG, 0.0f, 0.0f, 1920.0f, 1080.0f); // Fondo oscuro semi-transparente
-    DefineAtlasSprite(storeState.uiAtlas, 0, 0.0f, 0.0f, 339.0f, 54.0f);
-    DefineAtlasSprite(storeState.uiAtlas, 1, 0.0f, 54.0f, 339.0f, 54.0f);
-    DefineAtlasSprite(storeState.uiAtlas, 2, 0.0f, 108.0f, 339.0f, 54.0f);
-    DefineAtlasSprite(storeState.uiAtlas, 3, 0.0f, 162.0f, 339.0f, 54.0f);
+    InitializeAtlas(storeState.atlasJokers, 10, 16, 142.0f, 190.0f);
+    InitializeAtlas(storeState.descripcionJokers, 5, 2, 180.0f, 180.0f);
 
-    //Inicializamos el fondo
 
-    // 3. Creamos los botones matemáticos
+
+    DefineAtlasSprite(storeState.atlasJokers, 0, 0.0f, 3040.0f - 190.0f, 142.0f, 190.0f);
+    DefineAtlasSprite(storeState.atlasJokers, 1, 142.0f, 3040.0f - 190.0f, 142.0f, 190.0f);
+    DefineAtlasSprite(storeState.atlasJokers, 2, 284.0f, 3040.0f - 190.0f, 142.0f, 190.0f);
+
+
+
+    DefineAtlasSprite(storeState.descripcionJokers, 0, 0.0f, 0.0f, 180.0f, 180.0f);
+    DefineAtlasSprite(storeState.descripcionJokers, 1, 180.0f, 0.0f, 180.0f, 180.0f);
+    DefineAtlasSprite(storeState.descripcionJokers, 2, 180.0f * 2, 0.0f, 180.0f, 180.0f);
+
+
     JokerCard Joker1;
-    Joker1.spriteID = 3;
-    Joker1.baseX = 790.0f; 
-    Joker1.posX = Joker1.targetX = Joker1.baseX;
-    Joker1.posY = Joker1.targetY = 400.0f;
+    Joker1.spriteID = 0;
+    Joker1.baseY = 500.0f; 
+    Joker1.posX = Joker1.targetX = 740.0f;
+    Joker1.posY = Joker1.targetY = Joker1.baseY;
 
     JokerCard Joker2;
-    Joker2.spriteID = 2;
-    Joker2.baseX = 790.0f; 
-    Joker2.posX = Joker2.targetX = Joker2.baseX;
-    Joker2.posY = Joker2.targetY = 470.0f;
+    Joker2.spriteID = 1;
+    Joker2.baseY = 500.0f;
+    Joker2.posX = Joker2.targetX = 1040.0f;
+    Joker2.posY = Joker2.targetY = Joker2.baseY;
 
     JokerCard Joker3;
-    Joker3.spriteID = 1;
-    Joker3.baseX = 790.0f; 
-    Joker3.posX = Joker3.targetX = Joker3.baseX;
-    Joker3.posY = Joker3.targetY = 540.0f;
-
+    Joker3.spriteID = 2;
+    Joker3.baseY = 500.0f; 
+    Joker3.posX = Joker3.targetX = 1340.0f;
+    Joker3.posY = Joker3.targetY = Joker3.baseY;
     
 
     storeState.jokers.push_back(Joker1);
@@ -59,7 +64,7 @@ void InitStoreMenu(StoreMenuState& storeState) {
 void UpdateStoreMenu(StoreMenuState& storeState, u64 botonesPulsados, float delta_time, bool& pausa) {
 
     if (std::abs(storeState.targetMenuY - storeState.menuY) > 0.5f) {
-        storeState.menuY = LerpSimple(storeState.menuY, storeState.targetMenuY, delta_time * 15.0f);
+        storeState.menuY = LerpSimple(storeState.menuY, storeState.targetMenuY, delta_time * 5.0f);
     } else {
         storeState.menuY = storeState.targetMenuY;
     }
@@ -70,10 +75,10 @@ void UpdateStoreMenu(StoreMenuState& storeState, u64 botonesPulsados, float delt
     }
 
     // Navegación por el menú (Arriba / Abajo)
-    if (botonesPulsados & HidNpadButton_Up) {
+    if (botonesPulsados & HidNpadButton_Left) {
         if (storeState.selectedIndex > 0) storeState.selectedIndex--;
     }
-    if (botonesPulsados & HidNpadButton_Down) {
+    if (botonesPulsados & HidNpadButton_Right) {
         if ((size_t)storeState.selectedIndex < storeState.jokers.size() - 1) storeState.selectedIndex++;
     }
 
@@ -85,21 +90,21 @@ void UpdateStoreMenu(StoreMenuState& storeState, u64 botonesPulsados, float delt
     for (size_t i = 0; i < storeState.jokers.size(); i++) {
         JokerCard& btn = storeState.jokers[i];
 
-        // Si es el botón seleccionado, el targetX se mueve 20 píxeles a la derecha
+        // Si es el botón seleccionado, el targetY se mueve 20 píxeles a la derecha
         if (i == storeState.selectedIndex) {
-            btn.targetX = btn.baseX + 20.0f;
+            btn.targetY = btn.baseY - 25.0f;
             storeState.arraySeleccionados[i] = true;
         } else {
             // Si no, vuelve a su posición original
-            btn.targetX = btn.baseX;
+            btn.targetY = btn.baseY;
             storeState.arraySeleccionados[i] = false;
         }
 
         // Ejecutamos el Lerp para que el movimiento sea suave
-        if (std::abs(btn.targetX - btn.posX) > 0.5f) {
-            btn.posX = LerpSimple(btn.posX, btn.targetX, delta_time * 15.0f);
+        if (std::abs(btn.targetY - btn.posY) > 0.5f) {
+            btn.posY = LerpSimple(btn.posY, btn.targetY, delta_time * 15.0f);
         } else {
-            btn.posX = btn.targetX;
+            btn.posY = btn.targetY;
         }
 
     }
@@ -122,11 +127,10 @@ void UpdateStoreMenu(StoreMenuState& storeState, u64 botonesPulsados, float delt
 void RenderStoreMenu(const StoreMenuState& storeState, const glm::mat4& projection, glm::mat4 model, ImageData img) {
     if (storeState.menuY >= 1000.0f) return;
 
-    DibujarImagen(storeState.difuminado, projection, model, 1920.0f /2.0f, 1080.0f / 2);
     DibujarImagen(storeState.background, projection, model, storeState.background.posX, storeState.background.posY + storeState.menuY);
 
     for (const JokerCard& btn : storeState.jokers) {
-        DrawAtlasSprite(storeState.uiAtlas, btn.spriteID, projection, btn.posX, btn.posY + storeState.menuY);
+        DrawAtlasSprite(storeState.atlasJokers, btn.spriteID, projection, btn.posX, btn.posY + storeState.menuY);
     }
 
 }
@@ -138,7 +142,8 @@ void RenderStoreMenuDescriptions(const StoreMenuState& storeState, const glm::ma
 
     for (int i = 0; i < size; i++){
         if (Seleccionado[i]){
-            DibujarImagen(storeState.background, projection, model, 400.0f + 70.0f * i, 790.0f);
+            DibujarImagen(storeState.comprar, projection, model, 920.0f + 300.0f * i, 550.0f + storeState.menuY);
+            DrawAtlasSprite(storeState.descripcionJokers, i, projection, 720.0f + 300.0f * i, 700.0f + storeState.menuY);
     }
 }
 
