@@ -52,8 +52,8 @@ void InitJokersStore(StoreMenuState& storeState, int random1, int random2, int r
     storeState.jokers.push_back(j3);
     
     storeState.selectedIndex = 0;
-    storeState.menuY = 1500.0f;
-    storeState.targetMenuY = 1500.0f;
+    //storeState.menuY = 1500.0f;
+    //storeState.targetMenuY = 1500.0f;
 
 }
 
