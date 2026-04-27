@@ -388,7 +388,7 @@ void APP::Update()
             }
 
             // =======================================================
-            // BOTÓN MÁS (+): PASAR A LA SIGUIENTE CIEGA
+            // BOTÓN MÁS (+): PASAR A LA SIGUIENTE CIEGA EN TIENDA
             // ======================================================
             if (botonesPulsados & HidNpadButton_Plus) {
                 if (menuStore.targetMenuY == 0.0f) {
@@ -398,6 +398,33 @@ void APP::Update()
 
                 AvanzarSiguienteCiega();
                 
+                for (size_t i = 0; i < globalHand.size(); i++) DestroyCard(globalHand[i]);
+                for (size_t i = 0; i < globalDeck.size(); i++) DestroyCard(globalDeck[i]);
+                
+                globalHand.clear();
+                globalDeck.clear();
+                selectedCardsCount = 0;
+
+                LoadDeck(globalDeck);
+
+                for (int i = 0; i < handSize; i++) {
+                    DrawTopCard(globalHand, globalDeck);
+                }
+
+                if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
+                cursor = 0;
+            }
+        }
+
+        else if (estadoPartida.faseActual == PHASE_GAME_OVER) {
+            
+            // =======================================================
+            // BOTÓN MÁS (+): REINICIAR PARTIDA AL PERDER
+            // ======================================================
+            if (botonesPulsados & HidNpadButton_Plus) {
+                IniciarNuevaPartida();
+                ConfigurarCiega(300.0f);  
+
                 for (size_t i = 0; i < globalHand.size(); i++) DestroyCard(globalHand[i]);
                 for (size_t i = 0; i < globalDeck.size(); i++) DestroyCard(globalDeck[i]);
                 
@@ -458,7 +485,7 @@ void APP::Render()
 
     
 
-    DrawText(atlasss,std::to_string(ownedJokers.size()) +" / " + std::to_string(maxJokerHandSize)+ " JOKERS", projection, (screen_width/2.0f) + 500.0f, 130.0f, 1.5f, -5.0f);
+    DrawText(atlasss,std::to_string(ownedJokers.size()) +" / " + std::to_string(maxJokerHandSize)+ " JOKERS", projection, (screen_width/2.0f) + 550.0f, 130.0f, 1.5f, -5.0f);
     
     for (int i = 0; i < ownedJokers.size(); i++)
     {
@@ -495,6 +522,12 @@ void APP::Render()
         // DrawText(atlasss, "BIENVENIDO A LA TIENDA", projection, 900.0f, 400.0f, 2.0f, -5.0f);
         // DrawText(atlasss, "PULSA + PARA LA SIGUIENTE CIEGA", projection, 900.0f, 600.0f, 1.5f, -5.0f);
         
+    }
+
+    else if (estadoPartida.faseActual == PHASE_GAME_OVER) {
+        DrawText(atlasss, "FIN DE LA PARTIDA", projection, 900.0f, 300.0f, 3.0f, -5.0f);
+        DrawText(atlasss, "LLEGASTE A LA RONDA: " + std::to_string(estadoPartida.ronda), projection, 900.0f, 400.0f, 2.0f, -5.0f);
+        DrawText(atlasss, "PULSA + PARA REINICIAR", projection, 900.0f, 600.0f, 1.5f, -5.0f);
     }
 
     RenderPauseMenu(menuPausa, projection, model, imagee);
