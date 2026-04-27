@@ -92,6 +92,10 @@ StoreMenuState menuStore;
 
 Mix_Chunk* s_sfxCardSelect = nullptr;
 Mix_Chunk* s_sfxCardUnselect = nullptr;
+Mix_Chunk* s_sfxCardFan = nullptr;
+Mix_Chunk* s_sfxChips = nullptr;
+Mix_Chunk* s_sfxPlayOne = nullptr;
+Mix_Chunk* s_sfxDiscardOne = nullptr;
 
 uint8_t maxSelectedCards = 5;
 uint8_t selectedCardsCount = 0;
@@ -214,10 +218,14 @@ int APP::SetupScene()
     // Load SFX into memory
     s_sfxCardSelect = Audio::LoadSFX("romfs:/data/audio/card_select.wav");
     s_sfxCardUnselect = Audio::LoadSFX("romfs:/data/audio/card_unselect.wav");
+    s_sfxCardFan = Audio::LoadSFX("romfs:/data/audio/cardFan.wav");
+    s_sfxChips = Audio::LoadSFX("romfs:/data/audio/chips.wav");
+    s_sfxPlayOne = Audio::LoadSFX("romfs:/data/audio/card_select.wav");
+    s_sfxDiscardOne = Audio::LoadSFX("romfs:/data/audio/card_unselect.wav");
 
     // Load and play background music only when the scene is setted up correctly
-    Audio::PlayBGM("romfs:/data/audio/Balatro_Theme.mp3", 60);
-    Audio::SetVolume(60); // Volume already set in PlayBGM, but can be adjusted later with this function
+    Audio::PlayBGM("romfs:/data/audio/Balatro_Theme.mp3", 40);
+    Audio::SetVolume(40); // Volume already set in PlayBGM, but can be adjusted later with this function
 
     TRACE("SCENE SETTED AND MUSIC STARTED");
 
@@ -330,7 +338,13 @@ void APP::Update()
             {
                 if (selectedCardsCount > 0)
                 {
-                
+                    if (selectedCardsCount == 1) {
+                        Audio::PlaySFX(s_sfxPlayOne, 60);
+                    } else {
+                        Audio::PlaySFX(s_sfxCardFan, 60);
+                        Audio::PlaySFX(s_sfxChips, 60);
+                    }
+
                     JugarMano(manoJugada, cartasSeleccionadas);
 
                     
@@ -340,7 +354,7 @@ void APP::Update()
                     
                     while(globalDeck.size() > 0 && globalHand.size() < handSize) {
                         DrawTopCard(globalHand, globalDeck);
-                        Audio::PlaySFX(s_sfxCardSelect, 60);
+                        Audio::PlaySFX(s_sfxCardFan, 60);
                     }
                     
                     if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
@@ -356,6 +370,12 @@ void APP::Update()
                 
                 if (selectedCardsCount > 0 && estadoPartida.descartes > 0) 
                 {
+                    if (selectedCardsCount == 1) {
+                        Audio::PlaySFX(s_sfxDiscardOne, 60);
+                    } else {
+                        Audio::PlaySFX(s_sfxCardFan, 60);
+                    }
+
                     DescartarCartas(); 
                     
                     RemoveCardsFromHand(globalHand);
@@ -363,7 +383,7 @@ void APP::Update()
                 
                     while(globalDeck.size() > 0 && globalHand.size() < handSize) {
                         DrawTopCard(globalHand, globalDeck);
-                        Audio::PlaySFX(s_sfxCardSelect, 60);
+                        Audio::PlaySFX(s_sfxCardFan, 60);
                     }
                     if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}
                     cursor = 0;
@@ -555,6 +575,10 @@ void APP::CleanApplication()
     //texDestroy(textureBack);
     Audio::FreeSFX(s_sfxCardSelect);
     Audio::FreeSFX(s_sfxCardUnselect);
+    Audio::FreeSFX(s_sfxCardFan);
+    Audio::FreeSFX(s_sfxChips);
+    Audio::FreeSFX(s_sfxPlayOne);
+    Audio::FreeSFX(s_sfxDiscardOne);
     Audio::Clean(); 
     terminateLogs();
     SDL_Quit();

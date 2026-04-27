@@ -19,7 +19,7 @@ namespace Audio {
 
         // Initialize support for MP3 format
         Mix_Init(MIX_INIT_MP3);
-        Mix_AllocateChannels(8);
+        Mix_AllocateChannels(10);
 
         isInitialized = true;
         TRACE("Audio module initialized correctly.");
