@@ -35,7 +35,7 @@ std::vector<Joker> jokerDatabase = {
     {15, 7, "Half Joker", ACTION_ADD_MULT, 20.0f, TRIGGER_MAX_CARDS, "", 3},
     
     // Credit Card: Permite tener hasta -$20. Esto afecta a la tienda, no a los puntos.
-    {16, 15, "Credit Card", ACTION_ECONOMY, 15.0f, TRIGGER_ON_ACQUIRE, "Debt", -1},
+    {16, 15, "Credit Card", ACTION_ECONOMY, 20.0f, TRIGGER_ON_ACQUIRE, "Debt", -1},
     
     // Banner: +40 Chips por cada descarte restante
     {17, 21, "Banner", ACTION_ADD_CHIPS, 30.0f, TRIGGER_PER_DISCARD, "", -1},
@@ -47,5 +47,5 @@ std::vector<Joker> jokerDatabase = {
     {19, 33, "Abstract Joker", ACTION_ADD_MULT, 3.0f, TRIGGER_PER_JOKER, "", -1},
     
     // Huevo: Ganas dinero al final de la ronda (Ciega superada)
-    {20, 100, "Huevo", ACTION_ECONOMY, 3.0f, TRIGGER_END_ROUND, "", -1}
+    {20, 100, "Huevo", ACTION_ECONOMY, 1.0f, TRIGGER_END_ROUND, "", -1}
 };

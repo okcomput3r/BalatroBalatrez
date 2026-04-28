@@ -109,14 +109,10 @@ uint8_t handSize = 8;
 
 uint8_t maxJokerHandSize = 5;
 
-std::random_device rd;  // semilla
-std::mt19937 gen(rd()); // generador
-std::uniform_int_distribution<> dist(0, 19);
 
-int random1 = dist(gen);
-int random2 = dist(gen);
-int random3 = dist(gen);
-
+int random1 = 0;
+int random2 = 0;
+int random3 = 0;
 
 
 
@@ -199,6 +195,8 @@ int APP::SetupScene()
     InitializeAtlas(Jokers, 10, 16, 142.0f, 190.0f);
 
     InitPauseMenu(menuPausa);
+
+    GenerarNuevosJokersTienda(random1, random2, random3);
     InitStoreMenu(menuStore, random1, random2, random3);
 
 
@@ -429,9 +427,6 @@ void APP::Update()
                 if (typeOfSort) {SortHandSuit(globalHand);} else {SortHandValue(globalHand);}  
             }
 
-            random1 = dist(gen);
-            random2 = dist(gen);
-            random3 = dist(gen);
         }
 
         else if (estadoPartida.faseActual == PHASE_SHOP) {
@@ -441,8 +436,6 @@ void APP::Update()
                 menuStore.targetMenuY = 0.0f;
                 shop = !shop;
                 Audio::PlaySFX(s_sfxStoreOpen, 60);
-                estadoPartida.dinero += 5;
-                
             }
 
             // =======================================================
@@ -454,6 +447,8 @@ void APP::Update()
                     shop = !shop;
                     
                 }
+
+                GenerarNuevosJokersTienda(random1, random2, random3);
                 InitJokersStore(menuStore, random1, random2, random3);
 
                 AvanzarSiguienteCiega();

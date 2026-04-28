@@ -16,7 +16,6 @@
 #include <vector>
 #include <string>
 
-
 JokerCard Joker1;
 JokerCard Joker2;
 JokerCard Joker3;
@@ -193,12 +192,17 @@ void UpdateStoreMenu(StoreMenuState& storeState, u64 botonesPulsados, float delt
                 // 2. Añadimos la carta al jugador y restamos el dinero
                 ownedJokers.push_back(jokerDatabase[idComprado]);
                 estadoPartida.dinero -= 3; 
+
+                // 3. INYECCIÓN INSTANTÁNEA (CREDIT CARD) ---
+                if (jokerDatabase[idComprado].trigger == TRIGGER_ON_ACQUIRE) {
+                    estadoPartida.dinero += (int)jokerDatabase[idComprado].effectValue;
+                }
                 
-                // 3. Borramos la carta de la lista de la tienda
+                // 4. Borramos la carta de la lista de la tienda
                 storeState.jokers.erase(storeState.jokers.begin() + storeState.selectedIndex);
                 storeState.arraySeleccionados[storeState.selectedIndex] = false;
 
-                // 4. Ajustamos el índice por si compramos la última carta de la derecha
+                // 5. Ajustamos el índice por si compramos la última carta de la derecha
                 // para evitar que selectedIndex apunte a un lugar vacío (Out of bounds)
                 if (storeState.selectedIndex >= storeState.jokers.size() && storeState.selectedIndex > 0) {
                     storeState.selectedIndex--;
@@ -232,8 +236,38 @@ void RenderStoreMenuDescriptions(const StoreMenuState& storeState, const glm::ma
         if (Seleccionado[i]){
             DibujarImagen(storeState.comprar, projection, model, storeState.jokers[i].posX + 180.0f, 550.0f + storeState.menuY);
             DrawAtlasSprite(storeState.descripcionJokers, storeState.jokers[i].spriteID, projection, storeState.jokers[i].posX -20.0f, 700.0f + storeState.menuY);
+        }
     }
+
+
 }
 
+void GenerarNuevosJokersTienda(int& random1, int& random2, int& random3) {
+    static std::mt19937 gen(svcGetSystemTick());  
+    std::uniform_int_distribution<> dist(0, 20);
+    std::vector<int> elegidos;
+    
+    elegidos.clear();
 
+    while (elegidos.size() < 3) {
+        int rnd = dist(gen); 
+        
+        bool repetidoEnTienda = false;
+        for (int id : elegidos) {
+            if (id == rnd) repetidoEnTienda = true;
+        }
+
+        bool yaLoTiene = false;
+        for (Joker& joker : ownedJokers) {
+            if (joker.id == rnd) yaLoTiene = true; 
+        }
+
+        if (!repetidoEnTienda && !yaLoTiene) {
+            elegidos.push_back(rnd);
+        }
+    }
+    
+    random1 = elegidos[0];
+    random2 = elegidos[1];
+    random3 = elegidos[2];
 }

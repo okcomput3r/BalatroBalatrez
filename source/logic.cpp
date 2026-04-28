@@ -7,9 +7,10 @@ EstadoPartida estadoPartida;
 
 void IniciarNuevaPartida() {
     estadoPartida.faseActual = PHASE_BLIND_SELECT;
-    estadoPartida.dinero = 4;
+    estadoPartida.dinero = 1;
     estadoPartida.puntuacionGlobal = 0;
     estadoPartida.ronda = 1;
+    estadoPartida.multiplicadorDinamico = 1.45f;
     ownedJokers.clear();
 }
 
@@ -142,6 +143,13 @@ void JugarMano(std::string nombreMano, const std::vector<unsigned int>& cartasSe
     // Comprobar si hemos ganado o perdido
     if (estadoPartida.puntuacionGlobal >= estadoPartida.ciegaObjetivo) {
         TRACE("¡CIEGA SUPERADA!");
+        estadoPartida.dinero += 2; 
+        for (Joker& joker : ownedJokers) {
+            if (joker.action == ACTION_ECONOMY && joker.trigger == TRIGGER_END_ROUND) {
+                estadoPartida.dinero += (int)joker.effectValue;
+                TRACE("El Joker %s te ha dado %d monedas extra.", joker.name.c_str(), (int)joker.effectValue);
+            }
+        }
         estadoPartida.faseActual = PHASE_SHOP;
     } else if (estadoPartida.manos == 0) {
         TRACE("GAME OVER");
@@ -159,13 +167,9 @@ void DescartarCartas() {
 
 void AvanzarSiguienteCiega() {
     estadoPartida.ronda++;
-    float nuevoObjetivo = estadoPartida.ciegaObjetivo * 1.5f; 
-    //estadoPartida.dinero += 5; 
-    for (Joker& joker : ownedJokers) {
-        if (joker.action == ACTION_ECONOMY && joker.trigger == TRIGGER_END_ROUND) {
-            estadoPartida.dinero += (int)joker.effectValue;
-            TRACE("El Joker %s te ha dado %d monedas extra.", joker.name.c_str(), (int)joker.effectValue);
-        }
-    }
+    if (estadoPartida.multiplicadorDinamico > 2.0f) {
+        estadoPartida.multiplicadorDinamico = 2.0f;
+    }else estadoPartida.multiplicadorDinamico += 0.05f;
+    float nuevoObjetivo = estadoPartida.ciegaObjetivo * estadoPartida.multiplicadorDinamico; 
     ConfigurarCiega(nuevoObjetivo);
 }

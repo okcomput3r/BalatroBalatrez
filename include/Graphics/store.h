@@ -40,3 +40,4 @@ void UpdateStoreMenu(StoreMenuState& storeState, u64 botonesPulsados, float delt
 void RenderStoreMenu(const StoreMenuState& storeState, const glm::mat4& projection, glm::mat4 model, ImageData img);
 
 void RenderStoreMenuDescriptions(const StoreMenuState& storeState, const glm::mat4& projection, glm::mat4 model, bool Seleccionado[], int size, bool dibujar);
+void GenerarNuevosJokersTienda(int& random1, int& random2, int& random3);

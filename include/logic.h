@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 
+
+
 // Estados del juego
 enum GamePhase {
     PHASE_BLIND_SELECT, // Pantalla para elegir la siguiente ciega
@@ -17,6 +19,7 @@ struct EstadoPartida {
 
     // Estadísticas de la ronda actual
     float ciegaObjetivo;
+    float multiplicadorDinamico;
     float puntuacionGlobal;
     float fichas;
     float mult;
