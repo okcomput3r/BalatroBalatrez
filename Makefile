@@ -43,7 +43,11 @@ SOURCES		:=	source
 DATA		:=	data
 INCLUDES	:=	include
 ROMFS	:=	romfs
+APP_ICON	:= icon.jpg
 
+APP_TITLE   := Spanish Balatro
+APP_AUTHOR  := Edvinas L., Jose Ignacio S., Victor L., Pablo E.
+APP_VERSION := 1.0.0
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------

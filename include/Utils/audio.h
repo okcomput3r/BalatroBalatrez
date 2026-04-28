@@ -6,7 +6,7 @@ namespace Audio {
     bool Init();
 
     // Load and reproduce a music track in loop
-    void PlayBGM(const char* filePath, int volume = 40);
+    void PlayBGM(const char* filePath, int volume = 30);
 
     // Stops current music if it's playing and frees the associated memory
     void StopBGM();

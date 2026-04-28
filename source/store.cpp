@@ -7,6 +7,7 @@
 #include <SDL.h>
 #include <stdlib.h>
 #include <Utils/math.h>
+#include <Utils/audio.h>
 #include <Graphics/jokers.h>
 #include <iostream>
 #include <random>
@@ -23,6 +24,8 @@ JokerCard Joker3;
 int numero1;
 int numero2;
 int numero3;
+
+extern Mix_Chunk* s_sfxBuyItem;
 
 void InitJokersStore(StoreMenuState& storeState, int random1, int random2, int random3){
     numero1 = random1;
@@ -182,13 +185,15 @@ void UpdateStoreMenu(StoreMenuState& storeState, u64 botonesPulsados, float delt
             
             if (estadoPartida.dinero >= 3 && ownedJokers.size() < 5) {
                 
+                Audio::PlaySFX(s_sfxBuyItem, 60);
+                
                 // 1. Obtenemos el ID de la carta que estamos seleccionando
                 int idComprado = storeState.jokers[storeState.selectedIndex].spriteID;
 
                 // 2. Añadimos la carta al jugador y restamos el dinero
                 ownedJokers.push_back(jokerDatabase[idComprado]);
                 estadoPartida.dinero -= 3; 
-
+                
                 // 3. Borramos la carta de la lista de la tienda
                 storeState.jokers.erase(storeState.jokers.begin() + storeState.selectedIndex);
                 storeState.arraySeleccionados[storeState.selectedIndex] = false;
