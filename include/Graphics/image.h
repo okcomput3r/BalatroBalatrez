@@ -32,6 +32,9 @@ struct ImageData {
     std::unordered_map<int, SpriteDef> sprites;
 };
 
+void LoadImageBuffers(ImageData& img);
+bool LoadImageShaders(ImageData& img, const std::string& vertexPath, const std::string& fragmentPath);
+bool LoadImageTextures(ImageData& img, const std::string& texturePath);
 
 bool InitImage(ImageData& img, const std::string& vertexPath, const std::string& fragmentPath, const std::string& texturePath);
 
@@ -42,11 +45,6 @@ void DrawImage(const ImageData& img, const glm::mat4& transform, const glm::vec2
 
 void DibujarImagen(ImageData img, glm::mat4 projection, glm::mat4 model, float positionX, float positionY);
 void DestroyImage(ImageData& img);
-
-void LoadImageBuffers(ImageData& img);
-bool LoadImageShaders(ImageData& img, const std::string& vertexPath, const std::string& fragmentPath);
-bool LoadImageTextures(ImageData& img, const std::string& texturePath);
-
 
 void DefineAtlasSprite(ImageData& img, int spriteID, float pixelX, float pixelY, float width, float height);
 

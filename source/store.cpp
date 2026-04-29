@@ -186,24 +186,18 @@ void UpdateStoreMenu(StoreMenuState& storeState, u64 botonesPulsados, float delt
                 
                 Audio::PlaySFX(s_sfxBuyItem, 60);
                 
-                // 1. Obtenemos el ID de la carta que estamos seleccionando
                 int idComprado = storeState.jokers[storeState.selectedIndex].spriteID;
 
-                // 2. Añadimos la carta al jugador y restamos el dinero
                 ownedJokers.push_back(jokerDatabase[idComprado]);
                 estadoPartida.dinero -= 3; 
 
-                // 3. INYECCIÓN INSTANTÁNEA (CREDIT CARD) ---
                 if (jokerDatabase[idComprado].trigger == TRIGGER_ON_ACQUIRE) {
                     estadoPartida.dinero += (int)jokerDatabase[idComprado].effectValue;
                 }
                 
-                // 4. Borramos la carta de la lista de la tienda
                 storeState.jokers.erase(storeState.jokers.begin() + storeState.selectedIndex);
                 storeState.arraySeleccionados[storeState.selectedIndex] = false;
 
-                // 5. Ajustamos el índice por si compramos la última carta de la derecha
-                // para evitar que selectedIndex apunte a un lugar vacío (Out of bounds)
                 if (storeState.selectedIndex >= storeState.jokers.size() && storeState.selectedIndex > 0) {
                     storeState.selectedIndex--;
                 }
@@ -244,7 +238,7 @@ void RenderStoreMenuDescriptions(const StoreMenuState& storeState, const glm::ma
 
 void GenerarNuevosJokersTienda(int& random1, int& random2, int& random3) {
     static std::mt19937 gen(svcGetSystemTick());  
-    std::uniform_int_distribution<> dist(0, 20);
+    std::uniform_int_distribution<> dist(0, 19);
     std::vector<int> elegidos;
     
     elegidos.clear();
