@@ -102,21 +102,6 @@ void InitStoreMenu(StoreMenuState& storeState, int random1, int random2, int ran
     storeState.selectedIndex = 0;
     storeState.menuY = 1500.0f;
     storeState.targetMenuY = 1500.0f;
-    
-
-    
-
-
-
-    // DefineAtlasSprite(storeState.atlasJokers, jokerDatabase[random1].atlasIndex, 0.0f, 3040.0f - 190.0f, 142.0f, 190.0f);
-    // DefineAtlasSprite(storeState.atlasJokers, jokerDatabase[random2].atlasIndex, 142.0f, 3040.0f - 190.0f, 142.0f, 190.0f);
-    // DefineAtlasSprite(storeState.atlasJokers, jokerDatabase[random3].atlasIndex, 284.0f, 3040.0f - 190.0f, 142.0f, 190.0f);
-
-
-
-    // DefineAtlasSprite(storeState.descripcionJokers, 0, 0.0f, 0.0f, 180.0f, 180.0f);
-    // DefineAtlasSprite(storeState.descripcionJokers, 1, 180.0f, 0.0f, 180.0f, 180.0f);
-    // DefineAtlasSprite(storeState.descripcionJokers, 2, 180.0f * 2, 0.0f, 180.0f, 180.0f);
 
 
 
@@ -150,10 +135,6 @@ void UpdateStoreMenu(StoreMenuState& storeState, u64 botonesPulsados, float delt
     if (botonesPulsados & HidNpadButton_Right) {
         if ((size_t)storeState.selectedIndex < storeState.jokers.size() - 1) storeState.selectedIndex++;
     }
-
-
- 
-
 
     // Actualizar el Lerp de todos los botones
     for (size_t i = 0; i < storeState.jokers.size(); i++) {

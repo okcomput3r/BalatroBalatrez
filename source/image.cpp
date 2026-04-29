@@ -255,18 +255,6 @@ void DrawText(const ImageData& fontAtlas, const std::string& text, const glm::ma
     float currentY = posY;
 
     for (char c : text) {
-        // Manejamos los saltos de línea
-        if (c == '\n') {
-            currentX = posX - (sizee/2) * ((20.0f * scale) + letterSpacing); // Volvemos al principio del margen izquierdo
-            
-            // Usamos la altura de la letra A para saber cuánto bajar, o 20px por defecto
-            if (fontAtlas.sprites.find(33) != fontAtlas.sprites.end()) {
-                currentY += fontAtlas.sprites.at(33).pixelHeight * scale;
-            } else {
-                currentY += 20.0f * scale; 
-            }
-            continue;
-        }
 
         // Convertir el carácter ASCII a nuestro ID del atlas (ASCII 65 'A' - 32 = ID 33)
         int spriteID = (int)c - 32;
@@ -275,8 +263,7 @@ void DrawText(const ImageData& fontAtlas, const std::string& text, const glm::ma
         if (fontAtlas.sprites.find(spriteID) != fontAtlas.sprites.end()) {
             SpriteDef sprite = fontAtlas.sprites.at(spriteID);
             
-            // Si no es un espacio en blanco (el ID 0 suele ser el espacio en ASCII-32), lo dibujamos
-            // (Aun si lo dibujas, al estar vacío no se verá, pero saltarlo ahorra rendimiento)
+            // Si no es un espacio en blanco
             if (spriteID != 0) {
                 DrawAtlasSprite(fontAtlas, spriteID, projection, currentX, currentY, scale);
             }

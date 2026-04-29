@@ -35,6 +35,7 @@ struct StoreMenuState {
 // Funciones principales
 void InitJokersStore(StoreMenuState& storeState, int random1, int random2, int random3);
 void InitStoreMenu(StoreMenuState& storeState, int random1, int random2, int random3);
+
 void UpdateStoreMenu(StoreMenuState& storeState, u64 botonesPulsados, float delta_time, bool& pausa, int random1, int random2, int random3);
 
 void RenderStoreMenu(const StoreMenuState& storeState, const glm::mat4& projection, glm::mat4 model, ImageData img);
